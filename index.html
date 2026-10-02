@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>อองตองมีเดีย | ชำระเงิน</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <style>
+    :root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#6b7280;--brand:#5b46e8;--ok:#138a55;--danger:#c43d4b;--line:#e6e8ef}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Noto Sans Thai",sans-serif;background:linear-gradient(135deg,#f9fbff,#f3efff);color:var(--ink)}
+    .wrap{max-width:1040px;margin:auto;padding:22px}.head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.logo{font-weight:900;font-size:26px}.tag{font-size:13px;color:var(--muted)}
+    .tabs{display:flex;gap:8px}.tab{border:0;background:#fff;padding:10px 14px;border-radius:999px;box-shadow:0 3px 14px #00000010;cursor:pointer}.tab.active{background:var(--brand);color:#fff}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 12px 30px #26324d10}.card h2{margin:0 0 14px;font-size:19px}
+    label{display:block;font-size:13px;font-weight:700;margin:10px 0 6px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff}textarea{min-height:78px;resize:vertical}
+    .item{display:grid;grid-template-columns:1fr 100px 80px 42px;gap:8px;margin-bottom:8px}.btn{border:0;border-radius:12px;padding:11px 14px;cursor:pointer;font-weight:800}.primary{background:var(--brand);color:#fff}.soft{background:#efedff;color:#4938c5}.danger{background:#fff0f1;color:var(--danger)}
+    .totals{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px}.trow{display:flex;justify-content:space-between;margin:8px 0}.grand{font-size:22px;font-weight:900}.qrbox{text-align:center;background:#fafaff;border:1px solid var(--line);border-radius:18px;padding:14px}.qrbox canvas{max-width:210px!important;height:auto!important}.payinfo{font-size:14px;line-height:1.75;color:#333}.muted{color:var(--muted);font-size:13px}.success{background:#ecfff4;color:#0b6b41;border:1px solid #b8efd1;border-radius:14px;padding:14px;margin-top:12px;display:none}
+    .admin{display:none}.orders{display:grid;gap:10px}.order{border:1px solid var(--line);border-radius:16px;padding:13px}.orderTop{display:flex;justify-content:space-between;gap:10px;align-items:center}.badge{font-size:12px;padding:5px 9px;border-radius:999px;background:#f0f2f6}.small{font-size:12px;color:var(--muted)}a{color:var(--brand)}
+    @media(max-width:780px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}.head{align-items:flex-start;flex-direction:column}.item{grid-template-columns:1fr 84px 66px 40px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head"><div><div class="logo" id="shopName">อองตองมีเดีย</div><div class="tag">ระบบรับชำระเงินและแจ้งชำระเงิน</div></div><div class="tabs"><button class="tab active" onclick="showTab('pay',this)">ชำระเงิน</button><button class="tab" onclick="showTab('admin',this)">ผู้ดูแล</button></div></div>
+
+  <section id="payTab">
+    <div class="grid">
+      <div class="card">
+        <h2>1) ข้อมูลลูกค้า</h2>
+        <div class="row"><div><label>ชื่อ-นามสกุล / ชื่อลูกค้า</label><input id="customer" placeholder="เช่น คุณสมชาย" /></div><div><label>เบอร์โทร</label><input id="phone" inputmode="tel" placeholder="08x-xxx-xxxx" /></div></div>
+        <label>LINE / Facebook / ช่องทางติดต่อ</label><input id="contact" placeholder="ใส่เพื่อให้ร้านติดต่อกลับได้สะดวก" />
+
+        <h2 style="margin-top:22px">2) สินค้า / บริการ</h2>
+        <div id="items"></div><button class="btn soft" onclick="addItem()">+ เพิ่มรายการ</button>
+        <div class="row"><div><label>ค่าจัดส่ง</label><input id="shipping" type="number" min="0" value="0" oninput="calc()" /></div><div><label>หมายเหตุ</label><input id="note" placeholder="เช่น ส่งไฟล์ทาง LINE" /></div></div>
+        <div class="totals"><div class="trow"><span>ยอดสินค้า/บริการ</span><b id="subtotalText">฿0.00</b></div><div class="trow"><span>ค่าจัดส่ง</span><b id="shippingText">฿0.00</b></div><div class="trow grand"><span>ยอดชำระ</span><span id="totalText">฿0.00</span></div></div>
+      </div>
+
+      <div class="card">
+        <h2>3) ชำระเงิน</h2>
+        <div class="qrbox"><canvas id="qr"></canvas><div class="muted">สแกน QR พร้อมเพย์ตามยอดด้านล่าง</div><div class="grand" id="qrAmount">฿0.00</div></div>
+        <div class="payinfo" style="margin-top:12px"><b>โอนเงินผ่านธนาคาร</b><br><span id="bankInfo">กำลังโหลดข้อมูล...</span></div>
+        <label>แนบสลิปการชำระเงิน</label><input id="slip" type="file" accept="image/png,image/jpeg,image/webp" />
+        <div class="muted">ระบบนี้รับสลิปเพื่อให้ร้านตรวจสอบ หากต้องการ “ยืนยันเงินเข้าอัตโนมัติ” ต้องเชื่อม Payment Gateway เพิ่ม</div>
+        <button class="btn primary" style="width:100%;margin-top:14px" onclick="submitOrder()">ยืนยันคำสั่งซื้อ / แจ้งชำระเงิน</button>
+        <div class="success" id="successBox"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="adminTab" class="admin">
+    <div class="card"><h2>ผู้ดูแลร้าน</h2><div class="row"><div><label>PIN ผู้ดูแล</label><input id="adminPin" type="password" placeholder="PIN" /></div><div style="display:flex;align-items:end"><button class="btn primary" onclick="loadOrders()">โหลดรายการสั่งซื้อ</button></div></div><div id="orders" class="orders" style="margin-top:16px"></div></div>
+  </section>
+</div>
+<script>
+let cfg={promptPayId:'',shopName:'อองตองมีเดีย'};
+let itemSeq=0;
+const fmt=n=>'฿'+Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function showTab(name,btn){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById('payTab').style.display=name==='pay'?'block':'none';document.getElementById('adminTab').style.display=name==='admin'?'block':'none';}
+function addItem(name='',price='',qty=1){const id=++itemSeq;const d=document.createElement('div');d.className='item';d.id='item'+id;d.innerHTML=`<input class="iname" placeholder="ชื่อสินค้า/บริการ" value="${esc(name)}" oninput="calc()"><input class="iprice" type="number" min="0" step="0.01" placeholder="ราคา" value="${price}" oninput="calc()"><input class="iqty" type="number" min="1" value="${qty}" oninput="calc()"><button class="btn danger" onclick="document.getElementById('item${id}').remove();calc()">×</button>`;document.getElementById('items').appendChild(d);calc();}
+function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function getItems(){return [...document.querySelectorAll('.item')].map(x=>({name:x.querySelector('.iname').value.trim(),price:Number(x.querySelector('.iprice').value||0),qty:Math.max(1,Number(x.querySelector('.iqty').value||1))})).filter(x=>x.name&&x.price>0);}
+function calc(){const subtotal=getItems().reduce((s,i)=>s+i.price*i.qty,0);const shipping=Math.max(0,Number(document.getElementById('shipping').value||0));const total=subtotal+shipping;document.getElementById('subtotalText').textContent=fmt(subtotal);document.getElementById('shippingText').textContent=fmt(shipping);document.getElementById('totalText').textContent=fmt(total);document.getElementById('qrAmount').textContent=fmt(total);drawQR(total);return{subtotal,shipping,total};}
+
+function drawQR(amount){const c=document.getElementById('qr');if(!cfg.promptPayId||amount<=0){const ctx=c.getContext('2d');c.width=210;c.height=210;ctx.clearRect(0,0,210,210);ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('กรอกยอดเพื่อสร้าง QR',105,105);return;} try{const payload=promptPayPayload(cfg.promptPayId,amount);QRCode.toCanvas(c,payload,{width:210,margin:2});}catch(e){console.error(e)}}
+function tlv(id,value){return id+String(value.length).padStart(2,'0')+value}
+function crc16(str){let crc=0xFFFF;for(let c=0;c<str.length;c++){crc^=str.charCodeAt(c)<<8;for(let i=0;i<8;i++)crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}return crc.toString(16).toUpperCase().padStart(4,'0')}
+function promptPayPayload(target,amount){let t=String(target).replace(/\D/g,'');let aid='A000000677010111';let account='';if(t.length===10&&t.startsWith('0')){account='0066'+t.slice(1);account=tlv('01',account)}else if(t.length===13){account=tlv('02',t)}else{throw new Error('PromptPay ID ไม่ถูกต้อง')}const merchant=tlv('00',aid)+account;let p=tlv('00','01')+tlv('01','12')+tlv('29',merchant)+tlv('53','764')+tlv('54',Number(amount).toFixed(2))+tlv('58','TH')+tlv('62',tlv('07','ONTONG'));p+='6304';return p+crc16(p)}
+
+function fileToDataUrl(file){return new Promise((resolve,reject)=>{if(!file)return resolve(null);if(file.size>8*1024*1024)return reject(new Error('ไฟล์สลิปต้องไม่เกิน 8 MB'));const r=new FileReader();r.onload=()=>resolve({name:file.name,type:file.type,dataUrl:r.result});r.onerror=reject;r.readAsDataURL(file);});}
+async function submitOrder(){const customer=document.getElementById('customer').value.trim(),phone=document.getElementById('phone').value.trim(),items=getItems(),tot=calc();if(!customer)return alert('กรุณากรอกชื่อลูกค้า');if(!phone)return alert('กรุณากรอกเบอร์โทร');if(!items.length)return alert('กรุณาเพิ่มสินค้า/บริการอย่างน้อย 1 รายการ');let slip=null;try{slip=await fileToDataUrl(document.getElementById('slip').files[0]);}catch(e){return alert(e.message)}const btn=event.currentTarget;btn.disabled=true;btn.textContent='กำลังบันทึก...';google.script.run.withSuccessHandler(r=>{btn.disabled=false;btn.textContent='ยืนยันคำสั่งซื้อ / แจ้งชำระเงิน';const box=document.getElementById('successBox');box.style.display='block';box.innerHTML=`บันทึกสำเร็จ ✅<br><b>เลขที่คำสั่งซื้อ: ${r.orderId}</b><br>สถานะ: ${r.status}`;}).withFailureHandler(e=>{btn.disabled=false;btn.textContent='ยืนยันคำสั่งซื้อ / แจ้งชำระเงิน';alert(e.message||e)}).createOrder({customer,phone,contact:document.getElementById('contact').value.trim(),items,...tot,paymentMethod:'PromptPay/โอนเงิน',slip,note:document.getElementById('note').value.trim()});}
+function loadOrders(){const pin=document.getElementById('adminPin').value;const box=document.getElementById('orders');box.innerHTML='กำลังโหลด...';google.script.run.withSuccessHandler(list=>{box.innerHTML=list.length?'':'ยังไม่มีรายการ';list.forEach(o=>{const d=document.createElement('div');d.className='order';d.innerHTML=`<div class="orderTop"><div><b>${esc(o['Order ID'])}</b><div class="small">${new Date(o['Created At']).toLocaleString('th-TH')}</div></div><span class="badge">${esc(o['Status'])}</span></div><div style="margin-top:7px"><b>${esc(o['Customer'])}</b> · ${esc(o['Phone'])}<br>${esc(o['Items'])}</div><div class="orderTop" style="margin-top:8px"><b>${fmt(o['Total'])}</b>${o['Slip URL']?`<a href="${o['Slip URL']}" target="_blank">ดูสลิป</a>`:''}</div><div style="margin-top:9px"><select onchange="updateStatus('${esc(o['Order ID'])}',this.value)">${['รอชำระเงิน','รอตรวจสอบการชำระเงิน','ชำระแล้ว','กำลังดำเนินการ','เสร็จสิ้น','ยกเลิก'].map(s=>`<option ${s===o['Status']?'selected':''}>${s}</option>`).join('')}</select></div>`;box.appendChild(d)});}).withFailureHandler(e=>box.innerHTML=`<span style="color:#c43d4b">${e.message||e}</span>`).adminListOrders(pin)}
+function updateStatus(orderId,status){google.script.run.withFailureHandler(e=>alert(e.message||e)).adminUpdateStatus(document.getElementById('adminPin').value,orderId,status)}
+
+google.script.run.withSuccessHandler(c=>{cfg=c;document.getElementById('shopName').textContent=c.shopName;document.getElementById('bankInfo').innerHTML=`${esc(c.bankName)}<br>ชื่อบัญชี: <b>${esc(c.accountName)}</b><br>เลขบัญชี: <b>${esc(c.accountNo)}</b><br>พร้อมเพย์: <b>${esc(c.promptPayId)}</b>`;calc();}).getShopConfig();
+addItem();
+</script>
+</body>
+</html>
