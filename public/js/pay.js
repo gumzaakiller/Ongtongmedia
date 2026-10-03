@@ -5,7 +5,7 @@ import { rememberRecent } from './recent.js';
 // Customer-facing wording per status (what happened + what to do next).
 const STATUS_MESSAGE = {
   pending: '',
-  awaiting_verification: 'ร้านได้รับหลักฐานการชำระแล้ว กำลังตรวจสอบยอดเงิน',
+  awaiting_verification: 'ร้านได้รับแจ้งการชำระแล้ว กำลังตรวจสอบยอดเงินเข้าบัญชี',
   paid: 'ชำระเงินเรียบร้อยแล้ว ขอบคุณที่ใช้บริการอองตองมีเดีย',
   processing: 'ชำระเงินเรียบร้อยแล้ว ร้านกำลังดำเนินงานของคุณ',
   completed: 'งานเสร็จเรียบร้อย ขอบคุณที่ใช้บริการอองตองมีเดีย',
@@ -199,6 +199,44 @@ $('slipForm').addEventListener('submit', async e => {
     if (err.status && err.status < 500 && err.status !== 429) slipKey = null;
     show($('slipError'), err.status ? err.message : 'เชื่อมต่อไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วกด "ส่งสลิป" อีกครั้ง (ไม่ส่งซ้ำ)');
   } finally { sending = false; $('slipSubmit').disabled = false; $('slipSubmit').textContent = 'ส่งสลิป'; }
+});
+
+// ---- "transferred, no slip": two taps so a stray tap doesn't notify the shop ----
+let notifyKey = null, notifyArmed = false, notifyTimer;
+function resetNotify() {
+  notifyArmed = false; clearTimeout(notifyTimer);
+  $('notifyBtn').textContent = 'โอนแล้ว แต่ไม่มีสลิป'; $('notifyBtn').classList.remove('primary');
+}
+$('notifyBtn').addEventListener('click', async () => {
+  if (sending) return;
+  if (!notifyArmed) {
+    notifyArmed = true;
+    $('notifyBtn').textContent = `แตะอีกครั้ง ยืนยันว่าโอน ${$('total').textContent} แล้ว`;
+    $('notifyBtn').classList.add('primary');
+    notifyTimer = setTimeout(resetNotify, 6000);
+    return;
+  }
+  clearTimeout(notifyTimer);
+  notifyKey ||= crypto.randomUUID();
+  sending = true; $('notifyBtn').disabled = true; $('notifyBtn').textContent = 'กำลังแจ้งร้าน...'; show($('notifyError'), '');
+  try {
+    const res = await fetch(`/api/pay/${encodeURIComponent(token)}/notify`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': notifyKey },
+      body: JSON.stringify({ note: $('slipNote').value })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { const err = new Error(data.error || 'แจ้งไม่สำเร็จ ลองอีกครั้ง'); err.status = res.status; throw err; }
+    notifyKey = null; toast('แจ้งร้านเรียบร้อย ร้านจะเช็คเงินเข้าแล้วยืนยันให้');
+    await load(); scrollTo(0, 0);
+  } catch (err) {
+    if (err.status && err.status < 500 && err.status !== 429) notifyKey = null;
+    show($('notifyError'), err.status ? err.message : 'เชื่อมต่อไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง (ไม่แจ้งซ้ำ)');
+  } finally { sending = false; $('notifyBtn').disabled = false; resetNotify(); }
+});
+$('paidPromptNotify').addEventListener('click', () => {
+  $('paidPrompt').hidden = true; state.leftToPay = false;
+  $('notifyBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('notifyBtn').click(); // arms it; the customer confirms with a second tap
 });
 
 const load = () => api('/api/pay/' + encodeURIComponent(token))

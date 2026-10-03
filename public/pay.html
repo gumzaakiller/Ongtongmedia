@@ -73,7 +73,7 @@
     </section>
 
     <section id="uploadCard" class="pay-card" hidden aria-labelledby="uploadTitle">
-      <h2 id="uploadTitle">ชำระแล้ว ส่งสลิปให้ร้าน</h2>
+      <h2 id="uploadTitle">ชำระแล้ว แจ้งร้าน</h2>
       <form id="slipForm" novalidate>
         <label class="file-pick" id="filePick">
           <span id="fileLabel">แตะเพื่อเลือกรูปสลิป</span>
@@ -86,6 +86,10 @@
         <p id="slipError" class="notice error" role="alert" hidden></p>
         <button id="slipSubmit" class="btn primary block mt-16" type="submit">ส่งสลิป</button>
       </form>
+      <div class="or-sep"><span>หรือ</span></div>
+      <button id="notifyBtn" class="btn block" type="button">โอนแล้ว แต่ไม่มีสลิป</button>
+      <p class="hint center" id="notifyBtnHint">กดเพื่อแจ้งร้านว่าโอนแล้ว ร้านจะเช็คเงินเข้าแล้วยืนยันให้</p>
+      <p id="notifyError" class="notice error" role="alert" hidden></p>
     </section>
 
     <section class="pay-card" aria-labelledby="notifyTitle">
@@ -106,10 +110,11 @@
 </main>
 <div id="paidPrompt" class="paid-prompt" role="dialog" aria-labelledby="paidPromptTitle" hidden>
   <button id="paidPromptClose" class="paid-close" type="button" aria-label="ปิด">×</button>
-  <b id="paidPromptTitle">โอนเสร็จแล้วใช่ไหม? ส่งสลิปให้ร้านได้เลย</b>
+  <b id="paidPromptTitle">โอนเสร็จแล้วใช่ไหม? แจ้งร้านได้เลย</b>
   <div class="paid-actions">
-    <button id="paidPromptUpload" class="btn yellow" type="button">ส่งสลิปที่นี่</button>
-    <a id="paidPromptLine" class="btn on-dark" rel="noopener">ส่งทาง LINE</a>
+    <button id="paidPromptUpload" class="btn yellow" type="button">ส่งสลิป</button>
+    <button id="paidPromptNotify" class="btn yellow" type="button">โอนแล้ว ไม่มีสลิป</button>
+    <a id="paidPromptLine" class="btn on-dark span-2" rel="noopener">ส่งสลิปทาง LINE</a>
   </div>
 </div>
 <div id="toast" class="toast" role="status" hidden></div>

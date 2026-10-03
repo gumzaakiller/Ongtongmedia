@@ -1,7 +1,7 @@
 import { AppError, applySecurityHeaders, json, sameOrigin } from './lib/http.js';
 import { shopConfig } from './config.js';
 import { handleAdmin } from './routes/admin.js';
-import { handlePayApi, handlePayQr, handlePaySlip } from './routes/pay.js';
+import { handlePayApi, handlePayQr, handlePaySlip, handlePayNotify } from './routes/pay.js';
 import { handleLineWebhook } from './services/line.js';
 import { handleCatalog, handleCreateRequest, handleGetRequest } from './routes/requests.js';
 
@@ -22,9 +22,10 @@ async function route(request, env) {
     const { shopName, lineOaId, facebookUrl, messengerUrl, appEnv } = shopConfig(env);
     return json({ shopName, lineOaId, facebookUrl, messengerUrl, env: appEnv });
   }
-  const pay = path.match(/^\/api\/pay\/([^/]+)(\/qr\.png|\/slip)?$/);
-  if (pay && method === 'GET' && pay[2] !== '/slip') return pay[2] ? handlePayQr(request, env, pay[1]) : handlePayApi(request, env, pay[1]);
+  const pay = path.match(/^\/api\/pay\/([^/]+)(\/qr\.png|\/slip|\/notify)?$/);
+  if (pay && method === 'GET' && (!pay[2] || pay[2] === '/qr.png')) return pay[2] ? handlePayQr(request, env, pay[1]) : handlePayApi(request, env, pay[1]);
   if (pay && method === 'POST' && pay[2] === '/slip') return handlePaySlip(request, env, pay[1]);
+  if (pay && method === 'POST' && pay[2] === '/notify') return handlePayNotify(request, env, pay[1]);
   if (path === '/api/catalog' && method === 'GET') return handleCatalog();
   if (path === '/api/requests' && method === 'POST') return handleCreateRequest(request, env);
   const req = path.match(/^\/api\/requests\/([^/]+)$/);

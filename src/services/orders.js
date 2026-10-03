@@ -101,7 +101,7 @@ export async function getOrderDetail(env, orderNo, origin) {
   if (!o) throw new AppError('ไม่พบออเดอร์', 404);
   const [items, payments, events] = await db.batch([
     db.prepare('SELECT * FROM order_items WHERE order_id=? ORDER BY position').bind(o.id),
-    db.prepare('SELECT id,amount_satang,method,slip_key,slip_mime,slip_size,customer_note,status,reject_reason,submitted_at,reviewed_at FROM payments WHERE order_id=? ORDER BY id DESC').bind(o.id),
+    db.prepare('SELECT id,request_key,amount_satang,method,slip_key,slip_mime,slip_size,customer_note,status,reject_reason,submitted_at,reviewed_at FROM payments WHERE order_id=? ORDER BY id DESC').bind(o.id),
     db.prepare('SELECT from_status,to_status,note,created_at FROM order_events WHERE order_id=? ORDER BY id').bind(o.id)
   ]);
   return {
@@ -118,7 +118,7 @@ export async function getOrderDetail(env, orderNo, origin) {
     discountSatang: o.discount_satang,
     totalSatang: o.total_satang,
     payments: payments.results.map(p => ({
-      id: p.id, amountSatang: p.amount_satang, method: p.method, hasSlip: !!p.slip_key, slipMime: p.slip_mime, slipSize: p.slip_size,
+      id: p.id, amountSatang: p.amount_satang, method: p.method, hasSlip: !!p.slip_key, byCustomer: !String(p.request_key || '').startsWith('manual-'), slipMime: p.slip_mime, slipSize: p.slip_size,
       customerNote: p.customer_note, status: p.status, rejectReason: p.reject_reason, submittedAt: p.submitted_at, reviewedAt: p.reviewed_at
     })),
     events: events.results.map(e => ({ from: e.from_status, to: e.to_status, note: e.note, at: e.created_at })),

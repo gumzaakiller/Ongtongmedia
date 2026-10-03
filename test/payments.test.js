@@ -242,3 +242,41 @@ test('income search, CSV and dashboard (Phase 7)', async t => {
     assert.ok(d.ordersToday.count >= 61);
   });
 });
+
+test('customer says "transferred" without a slip; shop checks the bank and verifies', async t => {
+  const s = setup(); await s.login();
+  const o = await s.create(); const token = s.tokenOf(o);
+  const notify = (key = crypto.randomUUID(), note = 'โอนจากกรุงไทย') => s.call(`/api/pay/${token}/notify`, { method: 'POST', headers: { 'Idempotency-Key': key }, body: { note }, ip: '4.4.4.4' });
+  const key = crypto.randomUUID();
+  await t.test('order waits for verification, no slip stored, amount from D1', async () => {
+    const r = await notify(key);
+    assert.equal(r.status, 201, JSON.stringify(r.data));
+    const d = await s.order(o.orderNo);
+    assert.equal(d.status, 'awaiting_verification');
+    assert.deepEqual([d.payments[0].hasSlip, d.payments[0].byCustomer, d.payments[0].amountSatang, d.payments[0].customerNote], [false, true, 25500, 'โอนจากกรุงไทย']);
+    assert.equal(s.env.SLIPS.objects.size, 0);
+  });
+  await t.test('retry with the same key does not duplicate; a second notify is refused', async () => {
+    assert.equal((await notify(key)).status, 200);
+    assert.equal(await s.count('SELECT count(*) n FROM payments'), 1);
+    assert.equal((await notify()).status, 409);
+  });
+  await t.test('wrong token is 404, missing key is 400', async () => {
+    const r = await s.call(`/api/pay/${'A'.repeat(43)}/notify`, { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: {} });
+    assert.equal(r.status, 404);
+    assert.equal((await s.call(`/api/pay/${token}/notify`, { method: 'POST', body: {} })).status, 400);
+  });
+  await t.test('verify records income once', async () => {
+    const d = await s.order(o.orderNo);
+    const r = await s.call(`/api/admin/payments/${d.payments[0].id}/verify`, { method: 'POST', body: { version: d.version } });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.equal(r.data.order.status, 'paid');
+    assert.equal(await s.count('SELECT count(*) n FROM income'), 1);
+  });
+  await t.test('manual payments are marked as recorded by the shop', async () => {
+    const o2 = await s.create();
+    const r = await s.call(`/api/admin/orders/${o2.orderNo}/payments`, { method: 'POST', body: { version: o2.version, method: 'cash', receivedDate: TODAY, note: '' } });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.equal(r.data.order.payments[0].byCustomer, false);
+  });
+});

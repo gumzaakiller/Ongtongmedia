@@ -377,3 +377,9 @@ textarea { min-height: 76px; resize: vertical; }
 /* keep page content clear of the button; hide it while the "paid?" prompt is open */
 .pay-wrap, .home { padding-bottom: 96px; }
 .paid-prompt:not([hidden]) ~ .chat-fab, .paid-prompt:not([hidden]) ~ .chat-menu { display: none; }
+
+/* "or" divider between slip upload and "transferred, no slip" */
+.or-sep { display: flex; align-items: center; gap: 12px; margin: 18px 0 12px; color: var(--ink-2); font-size: 14px; }
+.or-sep::before, .or-sep::after { content: ''; flex: 1; border-top: 1px solid rgba(0,0,0,.18); }
+.paid-actions .span-2 { grid-column: 1 / -1; }
+.notice.warn { background: var(--yellow); color: var(--black); border-color: var(--black); }

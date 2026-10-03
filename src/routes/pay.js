@@ -1,7 +1,7 @@
-import { AppError, json, readBody } from '../lib/http.js';
+import { AppError, json, readBody, readJson } from '../lib/http.js';
 import { imageType, MAX_SLIP_BYTES } from '../lib/image.js';
 import { text } from '../lib/validate.js';
-import { submitSlip } from '../services/payments.js';
+import { submitSlip, notifyTransfer } from '../services/payments.js';
 import { TOKEN_RE } from '../lib/crypto.js';
 import { rateLimit } from '../lib/ratelimit.js';
 import { promptPayPayload } from '../lib/promptpay.js';
@@ -61,5 +61,17 @@ export async function handlePaySlip(request, env, token) {
   const mime = imageType(bytes); // from the file's bytes, not its name
   const note = text(form.get('note') ?? '', 'ข้อความถึงร้าน', 300);
   const { replayed } = await submitSlip(env, token, { bytes, mime, note, requestKey: key });
+  return json({ ok: true, status: 'awaiting_verification' }, replayed ? 200 : 201);
+}
+
+// Customer says they have transferred, without a slip (JSON: { note }), header Idempotency-Key.
+export async function handlePayNotify(request, env, token) {
+  await rateLimit(request, env, 'slip', 10, 600);
+  if (!TOKEN_RE.test(token)) throw new AppError(NOT_FOUND, 404);
+  const key = request.headers.get('Idempotency-Key');
+  if (!/^[A-Za-z0-9-]{16,64}$/.test(key || '')) throw new AppError('รหัสคำขอไม่ถูกต้อง');
+  const body = await readJson(request);
+  const note = text(body?.note ?? '', 'ข้อความถึงร้าน', 300);
+  const { replayed } = await notifyTransfer(env, token, { note, requestKey: key });
   return json({ ok: true, status: 'awaiting_verification' }, replayed ? 200 : 201);
 }

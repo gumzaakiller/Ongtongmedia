@@ -295,14 +295,15 @@ function renderPayments(o) {
     el('div', { class: 'row' },
       el('b', { class: 'num', text: `${baht(p.amountSatang)}  ${METHOD_LABEL[p.method] || p.method}` }),
       el('span', { class: `badge ${p.status}`, text: PAY_LABEL[p.status] })),
-    el('div', { class: 'small muted', text: `${p.hasSlip ? 'ลูกค้าส่งสลิป' : 'บันทึกโดยร้าน'} ${thaiDateTime(p.submittedAt)}` }),
+    el('div', { class: 'small muted', text: `${p.hasSlip ? 'ลูกค้าส่งสลิป' : p.byCustomer ? 'ลูกค้าแจ้งโอนแล้ว (ไม่มีสลิป)' : 'บันทึกโดยร้าน'} ${thaiDateTime(p.submittedAt)}` }),
+    !p.hasSlip && p.byCustomer && p.status === 'submitted' ? el('div', { class: 'notice warn small', text: 'ไม่มีสลิป: เปิดแอปธนาคารเช็คว่ามีเงินเข้าตามยอดนี้ก่อนกดยืนยัน' }) : null,
     p.customerNote ? el('div', { class: 'small', text: `ข้อความ: ${p.customerNote}` }) : null,
     p.rejectReason ? el('div', { class: 'small', text: `เหตุผลที่ไม่ผ่าน: ${p.rejectReason}` }) : null,
     p.hasSlip ? el('a', { class: 'slip', href: `/api/admin/payments/${p.id}/slip`, target: '_blank', rel: 'noopener', title: 'เปิดสลิปขนาดเต็ม' },
       el('img', { src: `/api/admin/payments/${p.id}/slip`, alt: `สลิปการชำระของ ${o.orderNo}`, loading: 'lazy' })) : null,
     p.status === 'submitted' ? el('div', { class: 'acts' },
       el('button', { class: 'btn primary', type: 'button', text: 'ยืนยันการชำระเงิน', onclick: e => reviewPayment(o, p, 'verify', e.currentTarget) }),
-      el('button', { class: 'btn danger', type: 'button', text: 'สลิปไม่ผ่าน', onclick: e => reviewPayment(o, p, 'reject', e.currentTarget) })) : null
+      el('button', { class: 'btn danger', type: 'button', text: p.hasSlip ? 'สลิปไม่ผ่าน' : 'ไม่พบเงินเข้า', onclick: e => reviewPayment(o, p, 'reject', e.currentTarget) })) : null
   )));
   $('manualBox').hidden = o.status !== 'pending';
   $('manualBox').open = false;
@@ -314,7 +315,9 @@ async function reviewPayment(o, p, action, btn) {
   if (action === 'verify') {
     if (!confirm(`ตรวจแล้วว่ามีเงินเข้าบัญชี ${baht(p.amountSatang)} จริง?\nเมื่อยืนยัน ระบบจะลงรายรับให้อัตโนมัติ`)) return;
   } else {
-    const reason = prompt('เหตุผลที่สลิปไม่ผ่าน (ลูกค้าจะเห็นข้อความนี้)', 'ยอดในสลิปไม่ตรงกับยอดที่ต้องชำระ');
+    const reason = p.hasSlip
+      ? prompt('เหตุผลที่สลิปไม่ผ่าน (ลูกค้าจะเห็นข้อความนี้)', 'ยอดในสลิปไม่ตรงกับยอดที่ต้องชำระ')
+      : prompt('แจ้งลูกค้าว่าอย่างไร (ลูกค้าจะเห็นข้อความนี้)', 'ร้านยังไม่พบยอดเงินเข้า กรุณาส่งสลิปหรือทักแชทร้าน');
     if (reason === null) return;
     if (!reason.trim()) return toast('กรุณาใส่เหตุผล');
     body.reason = reason.trim();

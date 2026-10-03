@@ -59,6 +59,37 @@ export async function submitSlipForOrder(env, order, { bytes, mime, note, reques
 }
 
 // ---------------------------------------------------------------------------
+// Customer: "I've transferred" without a slip. The shop checks its bank app, then verifies as usual.
+// ---------------------------------------------------------------------------
+export async function notifyTransfer(env, token, { note, requestKey }) {
+  const db = env.DB;
+  const order = await db.prepare('SELECT id,order_no,status FROM orders WHERE public_token=?').bind(token).first();
+  if (!order) throw new AppError('ไม่พบรายการชำระเงินนี้ กรุณาตรวจสอบลิงก์ หรือติดต่อร้าน', 404);
+  const previous = await db.prepare('SELECT order_id FROM payments WHERE request_key=?').bind(requestKey).first();
+  if (previous) {
+    if (previous.order_id !== order.id) throw new AppError('รหัสคำขอไม่ถูกต้อง', 409);
+    return { replayed: true };
+  }
+  if (order.status === 'awaiting_verification') throw new AppError('ร้านได้รับแจ้งการชำระของรายการนี้แล้ว กำลังตรวจสอบ', 409);
+  if (order.status !== 'pending') throw new AppError('รายการนี้ไม่อยู่ในสถานะรอชำระเงิน', 409);
+  const now = nowIso();
+  try {
+    await db.batch([
+      guard(db, "SELECT count(*) FROM orders WHERE id=? AND status='pending'", order.id),
+      db.prepare(`INSERT INTO payments(order_id,request_key,amount_satang,method,customer_note,submitted_at)
+        SELECT id,?,total_satang,'promptpay',?,? FROM orders WHERE id=?`).bind(requestKey, note, now, order.id),
+      db.prepare("UPDATE orders SET status='awaiting_verification', version=version+1, updated_at=? WHERE id=?").bind(now, order.id),
+      db.prepare("INSERT INTO order_events(order_id,from_status,to_status,note,created_at) VALUES(?,'pending','awaiting_verification','ลูกค้าแจ้งโอนแล้ว (ไม่มีสลิป) รอร้านเช็คเงินเข้า',?)").bind(order.id, now)
+    ]);
+  } catch (e) {
+    if (await db.prepare('SELECT 1 FROM payments WHERE request_key=?').bind(requestKey).first()) return { replayed: true };
+    if (isGuardFailure(e) || isUnique(e, 'payments.order_id')) throw new AppError('สถานะรายการเปลี่ยนไปแล้ว กรุณารีเฟรชหน้า', 409);
+    throw mapDbError(e) || e;
+  }
+  return { replayed: false };
+}
+
+// ---------------------------------------------------------------------------
 // Admin: verify / reject a submitted slip, or record a payment received outside the site (e.g. slip sent in LINE).
 // ---------------------------------------------------------------------------
 async function paymentWithOrder(env, paymentId) {
