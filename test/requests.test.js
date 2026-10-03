@@ -37,7 +37,7 @@ test('customer sends a job request (สั่งงาน)', async t => {
   await t.test('catalog lists sign-shop jobs, no shirts', async () => {
     const r = await s.call('/api/catalog');
     const names = r.data.catalog.map(c => c.name).join(' ');
-    assert.match(names, /ป้ายไวนิล/); assert.match(names, /3D/); assert.doesNotMatch(names, /เสื้อ/);
+    assert.match(names, /ป้ายไวนิล/); assert.match(names, /3D/); assert.match(names, /โรลอัพ/); assert.match(names, /เอ็กซ์สแตนด์/); assert.match(names, /3 ขา/); assert.doesNotMatch(names, /เสื้อ/);
   });
   await t.test('request with options and two files is saved; files kept private in R2', async () => {
     const r = await s.submit({ options: ['เจาะตาไก่', 'ไม่มีจริง'], deadline: '2099-12-31' }, { files: [['โลโก้ร้าน.png', png(1), 'image/png'], ['แบบ.pdf', pdf, 'application/pdf']] });
