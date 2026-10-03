@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>โอนเงิน / แจ้งชำระ | อองตองมีเดีย</title>
+  <link rel="icon" href="/shop-logo.png">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/chat.js"></script>
+  <script type="module" src="/js/transfer.js"></script>
+</head>
+<body class="pay-page">
+<header class="topbar">
+  <a href="/"><img src="/shop-logo.png" width="40" height="40" alt="หน้าแรก"></a>
+  <div><div class="shop" id="shopName">อองตองมีเดีย</div><div class="role">โอนเงิน / แจ้งชำระ</div></div>
+</header>
+
+<main class="pay-wrap">
+  <noscript><p class="notice error">กรุณาเปิด JavaScript เพื่อใช้หน้านี้</p></noscript>
+  <section id="iabBox" class="iab-box" hidden>
+    <b>เปิดหน้านี้ในเบราว์เซอร์ก่อนจ่ายเงิน</b>
+    <p id="iabText"></p>
+    <a id="iabOpen" class="btn primary block" hidden>เปิดใน Chrome</a>
+  </section>
+  <p id="loading" class="notice">กำลังโหลด...</p>
+  <section id="errorBox" class="notice error" role="alert" hidden></section>
+
+  <div id="content" hidden>
+    <section class="pay-card qr-card" aria-labelledby="qrTitle">
+      <h2 id="qrTitle">สแกนจ่ายด้วยพร้อมเพย์</h2>
+      <label for="qrAmountInput">ยอดที่จะโอน (บาท)</label>
+      <div class="amount-row">
+        <input id="qrAmountInput" inputmode="decimal" autocomplete="off" placeholder="เช่น 850">
+        <button id="qrMake" class="btn" type="button">สร้าง QR</button>
+      </div>
+      <p class="hint center" id="qrAmountHint">ใส่ยอดแล้วกด "สร้าง QR" ยอดจะขึ้นในแอปธนาคารให้เอง<br>ไม่ใส่ยอดก็ได้ แล้วไปพิมพ์ยอดในแอปธนาคาร</p>
+      <div class="qr-amount num" id="qrAmount"></div>
+      <img id="qrImg" class="qr-img" width="328" height="328" alt="QR พร้อมเพย์ของร้าน">
+      <button type="button" id="qrSave" class="btn primary block">1. บันทึกรูป QR</button>
+      <h3 class="bank-apps-title">2. เปิดแอปธนาคารของคุณ</h3>
+      <div class="bank-apps" id="bankApps"></div>
+      <p class="hint">ในแอปธนาคารกด "สแกน" แล้วเลือกรูป QR จากอัลบั้ม<br>บันทึกรูปไม่ได้? กดค้างที่รูป QR แล้วเลือกบันทึกรูป หรือแคปหน้าจอ<br>iPhone: กดปุ่มธนาคารแล้วจะไปหน้า App Store ให้กด "เปิด"</p>
+    </section>
+
+    <section class="pay-card" aria-labelledby="bankTitle">
+      <h2 id="bankTitle">หรือโอนเข้าบัญชีร้าน</h2>
+      <dl class="bank">
+        <dt>ธนาคาร</dt><dd id="bankName"></dd>
+        <dt>ชื่อบัญชี</dt><dd id="accountName"></dd>
+        <dt id="accountNoLabel">เลขบัญชี</dt>
+        <dd id="accountNoRow" class="copy-row"><span class="num" id="accountNo"></span><button class="btn small-btn" type="button" id="copyAccount">คัดลอก</button></dd>
+        <dt>พร้อมเพย์</dt>
+        <dd class="copy-row"><span class="num" id="promptPayId"></span><button class="btn small-btn" type="button" id="copyPromptPay">คัดลอก</button></dd>
+      </dl>
+    </section>
+
+    <section id="slipCard" class="pay-card" aria-labelledby="slipTitle">
+      <h2 id="slipTitle">3. โอนแล้ว ส่งสลิปให้ร้าน</h2>
+      <form id="transferForm" novalidate>
+        <label for="tName">ชื่อผู้โอน / ชื่อร้าน</label>
+        <input id="tName" maxlength="200" autocomplete="name" required>
+        <label for="tPhone">เบอร์โทร</label>
+        <input id="tPhone" type="tel" maxlength="30" autocomplete="tel" required>
+        <label for="tAmount">ยอดที่โอน (บาท)</label>
+        <input id="tAmount" inputmode="decimal" autocomplete="off" required placeholder="เช่น 850">
+        <label for="tRef">โอนค่าอะไร (ไม่บังคับ)</label>
+        <input id="tRef" maxlength="200" placeholder="เช่น ป้ายไวนิลหน้าร้าน / เลขบิล">
+        <label>รูปสลิป</label>
+        <label class="file-pick" id="filePick">
+          <span id="fileLabel">แตะเพื่อเลือกรูปสลิป</span>
+          <input id="slipFile" type="file" accept="image/png,image/jpeg,image/webp">
+        </label>
+        <img id="slipPreview" class="upload-preview" alt="ตัวอย่างสลิปที่เลือก" hidden>
+        <label for="tNote">ข้อความถึงร้าน (ไม่บังคับ)</label>
+        <input id="tNote" maxlength="300" placeholder="เช่น มัดจำครึ่งหนึ่งก่อน">
+        <p id="formError" class="notice error" role="alert" hidden></p>
+        <button id="submitBtn" class="btn primary block mt-16" type="submit">ส่งสลิปให้ร้าน</button>
+      </form>
+    </section>
+
+    <section id="doneCard" class="pay-card done" hidden aria-labelledby="doneTitle">
+      <h2 id="doneTitle">ส่งสลิปเรียบร้อย</h2>
+      <p>ร้านได้รับสลิปแล้ว จะตรวจยอดเงินเข้าแล้วยืนยันให้<br>เลขที่รายการ <b class="num" id="doneNo"></b></p>
+      <a id="doneLink" class="btn primary block">ดูสถานะการชำระ</a>
+      <p class="hint center">บันทึกลิงก์นี้ไว้ หรือเปิดจากหน้าแรกของร้านได้ภายหลัง</p>
+    </section>
+  </div>
+</main>
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>ตัวอย่างผลงาน | อองตองมีเดีย</title>
+  <meta name="description" content="ตัวอย่างงานป้ายไวนิล สติ๊กเกอร์ ป้ายอะคริลิก โรลอัพ และงานพิมพ์ 3D จากร้านอองตองมีเดีย">
+  <link rel="icon" href="/shop-logo.png">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/chat.js"></script>
+  <script type="module" src="/js/gallery.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <a href="/"><img src="/shop-logo.png" width="40" height="40" alt="หน้าแรก"></a>
+  <div><div class="shop">อองตองมีเดีย</div><div class="role">ตัวอย่างผลงาน</div></div>
+</header>
+<main class="gallery-wrap">
+  <h1 class="gallery-h1">ตัวอย่างผลงาน</h1>
+  <p class="muted">ชอบแบบไหน กด "สั่งงานแบบนี้" ร้านจะแจ้งราคาให้</p>
+  <div class="chips" id="catChips" role="group" aria-label="เลือกหมวด"></div>
+  <p id="loading" class="notice">กำลังโหลด...</p>
+  <p id="errorBox" class="notice error" role="alert" hidden></p>
+  <p id="emptyBox" class="notice" hidden>ร้านกำลังเพิ่มรูปตัวอย่างงาน ระหว่างนี้ทักแชทขอดูผลงานได้เลย</p>
+  <div class="gallery-grid" id="grid"></div>
+  <div class="landing-actions mt-16">
+    <a class="btn primary" href="/order">สั่งงาน</a>
+    <a class="btn" href="/">หน้าแรก</a>
+  </div>
+</main>
+<div id="viewer" class="viewer" role="dialog" aria-modal="true" aria-label="รูปขนาดใหญ่" hidden>
+  <button id="viewerClose" class="viewer-close" type="button" aria-label="ปิด">×</button>
+  <img id="viewerImg" alt="">
+  <div class="viewer-cap" id="viewerCap"></div>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

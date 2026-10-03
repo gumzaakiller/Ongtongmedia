@@ -102,4 +102,10 @@ Promise.all([api('/api/catalog'), api('/api/config').catch(() => ({}))]).then(([
     el('b', { text: cat.name }), el('span', { text: cat.hint }))));
   $('deadline').min = todayYmd();
   $('orderForm').hidden = false;
+  // From the gallery ("สั่งงานแบบนี้"): preselect the category and note which example.
+  const sp = new URLSearchParams(location.search);
+  const fromCat = catalog.find(c => c.id === sp.get('cat'));
+  if (fromCat) pick(fromCat);
+  const ref = (sp.get('ref') || '').slice(0, 200);
+  if (ref && !$('details').value) $('details').value = `อยากได้แบบตัวอย่าง: ${ref}\n`;
 }).catch(e => show($('loadError'), e.message));

@@ -7,7 +7,7 @@ import worker from '../src/index.js';
 import { makeEnv } from '../test/helpers/fake-d1.js';
 
 const root = new URL('../public/', import.meta.url).pathname;
-const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
+const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg' };
 
 // Mimics Workers static assets with default html_handling: "/admin" → admin.html, "/" → index.html.
 async function assetFetch(request) {

@@ -12,6 +12,9 @@
 | GET | `/api/pay/:token/qr.png` | รูป QR พร้อมเพย์ (PNG) ตามยอดใน D1 · เฉพาะสถานะ `pending` |
 | POST | `/api/pay/:token/slip` | ลูกค้าส่งสลิป: multipart `slip` (PNG/JPG/WEBP ≤ 8 MB ตรวจจากเนื้อไฟล์) + `note` · header `Idempotency-Key` · 10 ครั้ง/10 นาที/IP |
 | POST | `/api/pay/:token/notify` | ลูกค้าแจ้งโอนแล้วโดยไม่มีสลิป: JSON `{ note }` · header `Idempotency-Key` · ร้านต้องเช็คเงินเข้าแล้วยืนยันเอง |
+| GET | `/api/transfer` · `/api/transfer/qr.png?amount=` | หน้าโอนเงินไม่ต้องมีบิล: ข้อมูลบัญชี และ QR (ไม่ใส่ยอด = QR แบบใส่ยอดเองในแอป) |
+| POST | `/api/transfer` | multipart `slip,name,phone,amount,ref,note` + `Idempotency-Key` → สร้างบิล+สลิปรอตรวจ (ยอดที่ลูกค้ากรอก ร้านต้องตรวจกับสลิป) · 5 ครั้ง/10 นาที/IP |
+| GET | `/api/gallery` · `/api/gallery/:id/image` | ตัวอย่างผลงาน (รูปใน R2 prefix gallery/) |
 | GET | `/pay/:token` | หน้าเว็บลูกค้า (`public/pay.html`) |
 | GET | `/api/catalog` | ประเภทงานในเมนูสั่งงาน (แก้ที่ `src/catalog.js`) |
 | POST | `/api/requests` | ลูกค้าส่งคำขอสั่งงาน: multipart `category, qty, width, height, unit, options[], artwork, deadline, details, name, phone, lineId, files[]` · ไฟล์ JPG/PNG/WEBP/PDF ≤ 5 ไฟล์ ไฟล์ละ ≤ 20 MB รวม ≤ 25 MB · `Idempotency-Key` · 5 ครั้ง/10 นาที/IP → `{ requestNo, trackUrl }` |
@@ -36,6 +39,7 @@
 | POST | `/api/admin/orders/:orderNo/payments` | บันทึกรับเงินเอง (สลิปทาง LINE/เงินสด): `{ version, method, receivedDate, note? }` → ชำระแล้ว + ลงรายรับ |
 | POST | `/api/admin/payments/:id/verify` | `{ version }` ยืนยันสลิป → ชำระแล้ว + ลงรายรับ (วันที่รับเงิน = วันที่ลูกค้าส่งสลิป) |
 | POST | `/api/admin/payments/:id/reject` | `{ version, reason }` สลิปไม่ผ่าน → กลับเป็นรอชำระ ลูกค้าเห็นเหตุผล |
+| POST/DELETE | `/api/admin/gallery[/:id]` | เพิ่ม (multipart `image,category,title,caption`) / ลบรูปตัวอย่างงาน |
 | GET | `/api/admin/payments/:id/slip` | เปิดรูปสลิป (R2 private) |
 | GET | `/api/admin/requests?status=new\|quoted\|cancelled&cursor=` | รายการคำขอสั่งงาน |
 | GET | `/api/admin/requests/:requestNo` | รายละเอียด + ไฟล์ + ข้อมูลติดต่อ |

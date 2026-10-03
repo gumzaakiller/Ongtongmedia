@@ -28,7 +28,7 @@ async function showApp() {
 }
 
 /* ---------------- views ---------------- */
-const VIEWS = { dash: 'dashView', requests: 'requestsView', orders: 'ordersView', income: 'incomeView' };
+const VIEWS = { dash: 'dashView', requests: 'requestsView', orders: 'ordersView', income: 'incomeView', gallery: 'galleryView' };
 async function setView(name) {
   state.view = name;
   for (const [v, id] of Object.entries(VIEWS)) $(id).hidden = v !== name;
@@ -39,6 +39,7 @@ async function setView(name) {
   if (name === 'dash') return loadDashboard();
   if (name === 'income') return loadIncome();
   if (name === 'requests') return loadRequests();
+  if (name === 'gallery') return loadGallery();
   await loadOrders();
   if (isDesktop() && !state.current) openCreate();
 }
@@ -535,3 +536,64 @@ async function quoteFromRequest(r) {
 /* ---------------- start ---------------- */
 addEventListener('resize', () => { if (isDesktop()) { $('side').classList.remove('detail-open'); $('reqSide').classList.remove('detail-open'); document.body.style.overflow = ''; } });
 api('/api/admin/session').then(showApp).catch(e => { if (!onAuthError(e)) { showLogin(); show($('loginError'), e.message); } });
+
+/* ---------------- gallery (product examples) ---------------- */
+let galleryCats = null, gSending = false;
+async function loadGallery() {
+  try {
+    if (!galleryCats) {
+      galleryCats = (await api('/api/catalog')).catalog;
+      $('gCat').replaceChildren(...galleryCats.map(c => el('option', { value: c.id, text: c.name })));
+    }
+    const { items } = await api('/api/gallery');
+    const name = id => galleryCats.find(c => c.id === id)?.name || id;
+    $('gList').replaceChildren(...items.map(i => el('div', { class: 'ag-item' },
+      el('img', { src: i.imageUrl, alt: i.title, loading: 'lazy' }),
+      el('div', {}, el('b', { text: i.title }), el('span', { class: 'muted', text: name(i.category) }),
+        el('button', { class: 'btn danger small-btn', type: 'button', text: 'ลบ', onclick: async e => {
+          if (!confirm(`ลบรูป "${i.title}" ออกจากตัวอย่างงาน?`)) return;
+          e.currentTarget.disabled = true;
+          try { await api(`/api/admin/gallery/${i.id}`, { method: 'DELETE' }); toast('ลบแล้ว'); loadGallery(); }
+          catch (err) { toast(err.message); e.currentTarget.disabled = false; }
+        } })))));
+    if (!items.length) $('gList').replaceChildren(el('p', { class: 'muted', text: 'ยังไม่มีรูปตัวอย่าง เพิ่มรูปแรกได้จากฟอร์มด้านบน' }));
+  } catch (err) { toast(err.message); }
+}
+
+// Phone photos are big: shrink to 1600 px JPEG in the browser so uploads are quick and the page stays light.
+async function shrinkImage(file) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    if (scale === 1 && file.size < 1.5 * 1024 * 1024) return file;
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+    return blob ? new File([blob], 'photo.jpg', { type: 'image/jpeg' }) : file;
+  } catch { return file; }
+}
+$('gFile').addEventListener('change', () => {
+  const f = $('gFile').files[0];
+  $('gFileLabel').textContent = f ? `เลือกแล้ว: ${f.name}` : 'แตะเพื่อเลือกรูป';
+  if (f && !$('gTitle').value) $('gTitle').focus();
+});
+$('galleryForm').addEventListener('submit', async e => {
+  e.preventDefault(); if (gSending) return;
+  const f = $('gFile').files[0];
+  if (!$('gTitle').value.trim()) return show($('gError'), 'กรุณาใส่ชื่อผลงาน');
+  if (!f) return show($('gError'), 'กรุณาเลือกรูป');
+  gSending = true; $('gSubmit').disabled = true; $('gSubmit').textContent = 'กำลังอัปโหลด...'; show($('gError'), '');
+  try {
+    const form = new FormData();
+    form.set('category', $('gCat').value); form.set('title', $('gTitle').value); form.set('caption', $('gCaption').value);
+    form.set('image', await shrinkImage(f));
+    const res = await fetch('/api/admin/gallery', { method: 'POST', body: form, credentials: 'same-origin' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'อัปโหลดไม่สำเร็จ');
+    toast('เพิ่มรูปตัวอย่างแล้ว');
+    $('gTitle').value = ''; $('gCaption').value = ''; $('gFile').value = ''; $('gFileLabel').textContent = 'แตะเพื่อเลือกรูป';
+    loadGallery();
+  } catch (err) { show($('gError'), err.message); }
+  finally { gSending = false; $('gSubmit').disabled = false; $('gSubmit').textContent = 'เพิ่มรูปตัวอย่าง'; }
+});

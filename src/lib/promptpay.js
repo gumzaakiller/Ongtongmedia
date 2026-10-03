@@ -12,10 +12,12 @@ export function crc16(str) {
   }
   return crc.toString(16).toUpperCase().padStart(4, '0');
 }
+// satang = null → reusable QR without an amount (the customer types it in the bank app).
 export function promptPayPayload(target, satang) {
-  if (!validPromptPay(target) || !Number.isSafeInteger(satang) || satang <= 0) throw new AppError('ข้อมูลพร้อมเพย์หรือยอดเงินไม่ถูกต้อง', 500);
+  const open = satang === null;
+  if (!validPromptPay(target) || (!open && (!Number.isSafeInteger(satang) || satang <= 0))) throw new AppError('ข้อมูลพร้อมเพย์หรือยอดเงินไม่ถูกต้อง', 500);
   const account = target.length === 10 ? tlv('01', '0066' + target.slice(1)) : tlv('02', target);
-  const amount = `${Math.floor(satang / 100)}.${String(satang % 100).padStart(2, '0')}`;
-  const payload = tlv('00', '01') + tlv('01', '12') + tlv('29', tlv('00', 'A000000677010111') + account) + tlv('58', 'TH') + tlv('53', '764') + tlv('54', amount) + '6304';
+  const amount = open ? '' : tlv('54', `${Math.floor(satang / 100)}.${String(satang % 100).padStart(2, '0')}`);
+  const payload = tlv('00', '01') + tlv('01', open ? '11' : '12') + tlv('29', tlv('00', 'A000000677010111') + account) + tlv('58', 'TH') + tlv('53', '764') + amount + '6304';
   return payload + crc16(payload);
 }

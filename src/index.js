@@ -3,6 +3,8 @@ import { shopConfig } from './config.js';
 import { handleAdmin } from './routes/admin.js';
 import { handlePayApi, handlePayQr, handlePaySlip, handlePayNotify } from './routes/pay.js';
 import { handleLineWebhook } from './services/line.js';
+import { handleTransferInfo, handleTransferQr, handleTransferSubmit } from './routes/transfer.js';
+import { handleGalleryList, galleryImage } from './services/gallery.js';
 import { handleCatalog, handleCreateRequest, handleGetRequest } from './routes/requests.js';
 
 async function route(request, env) {
@@ -26,7 +28,13 @@ async function route(request, env) {
   if (pay && method === 'GET' && (!pay[2] || pay[2] === '/qr.png')) return pay[2] ? handlePayQr(request, env, pay[1]) : handlePayApi(request, env, pay[1]);
   if (pay && method === 'POST' && pay[2] === '/slip') return handlePaySlip(request, env, pay[1]);
   if (pay && method === 'POST' && pay[2] === '/notify') return handlePayNotify(request, env, pay[1]);
+  if (path === '/api/transfer' && method === 'GET') return handleTransferInfo(env);
+  if (path === '/api/transfer/qr.png' && method === 'GET') return handleTransferQr(request, env);
+  if (path === '/api/transfer' && method === 'POST') return handleTransferSubmit(request, env, url.origin);
   if (path === '/api/catalog' && method === 'GET') return handleCatalog();
+  if (path === '/api/gallery' && method === 'GET') return handleGalleryList(env);
+  const gi = path.match(/^\/api\/gallery\/(\d{1,9})\/image$/);
+  if (gi && method === 'GET') return galleryImage(env, Number(gi[1]));
   if (path === '/api/requests' && method === 'POST') return handleCreateRequest(request, env);
   const req = path.match(/^\/api\/requests\/([^/]+)$/);
   if (req && method === 'GET') return handleGetRequest(request, env, req[1]);

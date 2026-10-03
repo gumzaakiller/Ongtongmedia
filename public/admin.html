@@ -41,6 +41,7 @@
     <button class="tab-btn" type="button" data-view="requests" aria-pressed="false">คำขอ <span class="tab-count" id="reqCount" hidden></span></button>
     <button class="tab-btn" type="button" data-view="orders" aria-pressed="true">บิล</button>
     <button class="tab-btn" type="button" data-view="income" aria-pressed="false">รายรับ</button>
+    <button class="tab-btn" type="button" data-view="gallery" aria-pressed="false">ตัวอย่างงาน</button>
   </nav>
 
   <!-- Dashboard -->
@@ -109,6 +110,25 @@
       </article>
       <p id="reqEmptySide" class="notice">เลือกคำขอทางซ้ายเพื่อดูรายละเอียด</p>
     </aside>
+  </section>
+
+  <!-- Gallery -->
+  <section id="galleryView" class="view-wrap wide" hidden aria-labelledby="galleryTitle">
+    <div class="list-head"><h1 id="galleryTitle">ตัวอย่างงาน</h1><a class="btn" href="/gallery" target="_blank" rel="noopener">ดูหน้าลูกค้า</a></div>
+    <form id="galleryForm" class="panel" novalidate>
+      <label for="gCat">หมวด</label>
+      <select id="gCat"></select>
+      <label for="gTitle">ชื่อผลงาน</label>
+      <input id="gTitle" maxlength="200" placeholder="เช่น ป้ายไวนิลร้านกาแฟ 3x1 ม.">
+      <label for="gCaption">รายละเอียด (ไม่บังคับ)</label>
+      <input id="gCaption" maxlength="500" placeholder="เช่น ไวนิลเจาะตาไก่ พร้อมโครงเหล็ก">
+      <label class="file-pick" for="gFile"><span id="gFileLabel">แตะเพื่อเลือกรูป</span>
+        <input id="gFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
+      <p class="hint">รูปใหญ่จะถูกย่อให้อัตโนมัติก่อนอัปโหลด</p>
+      <p id="gError" class="notice error" role="alert" hidden></p>
+      <button id="gSubmit" class="btn primary block mt-16" type="submit">เพิ่มรูปตัวอย่าง</button>
+    </form>
+    <div class="ag-grid" id="gList"></div>
   </section>
 
   <!-- Income -->

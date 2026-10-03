@@ -1,4 +1,6 @@
-import { AppError, json, readJson } from '../lib/http.js';
+import { AppError, json, readBody, readJson } from '../lib/http.js';
+import { MAX_SLIP_BYTES } from '../lib/image.js';
+import { addGalleryItem, deleteGalleryItem } from '../services/gallery.js';
 import { login, logout, requireAdmin } from '../lib/auth.js';
 import { validateNewOrder, validateOrderEdit, text } from '../lib/validate.js';
 import { ORDER_NO_RE, changeStatus, createOrder, editOrder, getOrderDetail, listOrders, mapDbError, searchCustomers } from '../services/orders.js';
@@ -99,6 +101,17 @@ export async function handleAdmin(request, env, path) {
       return json({ order: await rejectPayment(env, id, { version: body.version, reason }, origin) });
     }
   }
+
+  if (path === '/api/admin/gallery' && method === 'POST') {
+    const type = request.headers.get('content-type') || '';
+    if (!type.startsWith('multipart/form-data')) throw new AppError('รูปแบบข้อมูลไม่ถูกต้อง', 415);
+    let form;
+    try { form = await new Response(await readBody(request, MAX_SLIP_BYTES + 64 * 1024), { headers: { 'Content-Type': type } }).formData(); }
+    catch (e) { if (e instanceof AppError) throw e; throw new AppError('ข้อมูลที่ส่งมาไม่ถูกต้อง'); }
+    return json({ item: await addGalleryItem(env, form) }, 201);
+  }
+  const gm = path.match(/^\/api\/admin\/gallery\/(\d{1,9})$/);
+  if (gm && method === 'DELETE') return json(await deleteGalleryItem(env, Number(gm[1])));
 
   const om = path.match(/^\/api\/admin\/orders\/([^/]+)\/payments$/);
   if (om && method === 'POST') {
