@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#000000">
+  <title>ผู้ดูแล | อองตองมีเดีย</title>
+  <link rel="icon" href="/shop-logo.png">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/admin.js"></script>
+</head>
+<body>
+<noscript><p class="notice error">กรุณาเปิด JavaScript เพื่อใช้งานหน้าผู้ดูแล</p></noscript>
+
+<!-- Login -->
+<section id="loginView" class="login" hidden>
+  <div class="mark">
+    <img src="/shop-logo.png" width="72" height="72" alt="โลโก้อองตองมีเดีย">
+    <div><h1>อองตองมีเดีย</h1><div class="muted">เข้าสู่ระบบผู้ดูแลร้าน</div></div>
+  </div>
+  <form id="loginForm">
+    <label for="password">รหัสผ่านผู้ดูแล</label>
+    <input id="password" type="password" autocomplete="current-password" maxlength="256" required>
+    <p id="loginError" class="notice error" role="alert" hidden></p>
+    <button class="btn primary block mt-16" type="submit">เข้าสู่ระบบ</button>
+  </form>
+</section>
+
+<!-- App -->
+<div id="appView" hidden>
+  <header class="topbar">
+    <img src="/shop-logo.png" width="40" height="40" alt="">
+    <div><div class="shop">อองตองมีเดีย</div><div class="role">ผู้ดูแลร้าน</div></div>
+    <span id="envFlag" class="env-flag" hidden>ทดสอบ</span>
+    <span class="spacer"></span>
+    <button id="logoutBtn" class="btn on-dark" type="button">ออกจากระบบ</button>
+  </header>
+
+  <main class="workspace">
+    <!-- Orders list -->
+    <section aria-labelledby="listTitle">
+      <div class="list-head">
+        <h1 id="listTitle">รายการเรียกเก็บเงิน</h1>
+        <button id="reloadBtn" class="btn ghost" type="button" aria-label="โหลดรายการใหม่">โหลดใหม่</button>
+      </div>
+      <div class="search">
+        <input id="searchInput" type="search" aria-label="ค้นหา" placeholder="ค้นหาเลขออเดอร์ ชื่อ หรือเบอร์ลูกค้า" maxlength="50" autocomplete="off">
+      </div>
+      <div class="chips" id="statusChips" role="group" aria-label="กรองตามสถานะ"></div>
+      <p id="listError" class="notice error" role="alert" hidden></p>
+      <ul id="orderList" class="orders" aria-live="polite"></ul>
+      <button id="moreBtn" class="btn block more" type="button" hidden>แสดงรายการเพิ่ม</button>
+      <button id="newBtn" class="btn primary block fab" type="button">สร้างรายการเรียกเก็บเงิน</button>
+    </section>
+
+    <!-- Right side: create form OR job ticket -->
+    <aside id="side" class="side">
+      <!-- Create -->
+      <form id="createForm" class="panel" hidden novalidate>
+        <h2>สร้างรายการเรียกเก็บเงิน</h2>
+
+        <h3 class="flat">ลูกค้า</h3>
+        <div id="customerPicked" class="picked" hidden>
+          <b id="customerPickedName"></b>
+          <button id="customerClear" class="btn ghost small" type="button">เปลี่ยน</button>
+        </div>
+        <div id="customerFields">
+          <div class="suggest">
+            <label for="cName">ชื่อลูกค้า</label>
+            <input id="cName" maxlength="200" autocomplete="off" placeholder="พิมพ์ชื่อ หรือเลือกลูกค้าเดิม" aria-controls="cSuggest" aria-autocomplete="list">
+            <ul id="cSuggest" hidden></ul>
+          </div>
+          <div class="row2">
+            <div><label for="cPhone">เบอร์โทร</label><input id="cPhone" type="tel" maxlength="30" autocomplete="off" placeholder="ไม่บังคับ"></div>
+            <div><label for="cLine">LINE ID</label><input id="cLine" maxlength="100" autocomplete="off" placeholder="ไม่บังคับ"></div>
+          </div>
+        </div>
+
+        <h3>รายละเอียดงาน</h3>
+        <label for="title">ชื่องาน</label>
+        <input id="title" maxlength="300" placeholder="เช่น ป้ายไวนิลหน้าร้าน (เว้นว่างได้)">
+        <div id="items"></div>
+        <button id="addItem" class="btn ghost mt-8" type="button">+ เพิ่มรายการ</button>
+
+        <label for="discount">ส่วนลด (บาท)</label>
+        <input id="discount" inputmode="decimal" placeholder="0" autocomplete="off">
+
+        <div class="totals num" aria-live="polite">
+          <div><span>รวม</span><span id="tSub">฿0.00</span></div>
+          <div><span>ส่วนลด</span><span id="tDisc">฿0.00</span></div>
+          <div class="grand"><span>ยอดชำระ</span><span id="tTotal">฿0.00</span></div>
+        </div>
+
+        <h3>หมายเหตุ</h3>
+        <label for="note">ถึงลูกค้า (ลูกค้าเห็น)</label>
+        <textarea id="note" maxlength="1000" placeholder="เช่น รับของที่ร้านได้หลัง 5 โมงเย็น"></textarea>
+        <label for="internalNote">ภายในร้าน (ลูกค้าไม่เห็น)</label>
+        <textarea id="internalNote" maxlength="1000"></textarea>
+
+        <p id="createError" class="notice error" role="alert" hidden></p>
+        <div class="status-actions">
+          <button id="createSubmit" class="btn primary block" type="submit">สร้างรายการและรับลิงก์</button>
+          <button id="createCancel" class="btn ghost block" type="button">ยกเลิก</button>
+        </div>
+      </form>
+
+      <!-- Ticket -->
+      <article id="ticket" class="ticket" hidden aria-live="polite">
+        <div class="ticket-head">
+          <button id="ticketClose" class="btn on-dark close" type="button">กลับ</button>
+          <div class="no" id="tkNo"></div>
+          <div class="title" id="tkTitle"></div>
+          <span class="badge" id="tkStatus"></span>
+        </div>
+        <div class="perf" aria-hidden="true"></div>
+        <div class="ticket-body">
+          <h3>ลูกค้า</h3>
+          <div class="cust" id="tkCustomer"></div>
+          <div class="muted small" id="tkContact"></div>
+
+          <h3>รายการ</h3>
+          <table class="lines num"><tbody id="tkLines"></tbody></table>
+          <div class="sum num">
+            <div><span>รวม</span><span id="tkSub"></span></div>
+            <div id="tkDiscRow"><span>ส่วนลด</span><span id="tkDisc"></span></div>
+            <div class="grand"><span>ยอดชำระ</span><span id="tkTotal"></span></div>
+          </div>
+
+          <div class="share" id="shareBox">
+            <label for="tkLink">ลิงก์ชำระเงินของลูกค้า</label>
+            <input id="tkLink" readonly>
+            <div class="actions">
+              <button id="copyLink" class="btn primary" type="button">คัดลอกลิงก์</button>
+              <button id="copyMessage" class="btn" type="button">คัดลอกข้อความส่ง LINE</button>
+              <a id="openLink" class="btn ghost" target="_blank" rel="noopener">เปิดหน้าที่ลูกค้าเห็น</a>
+            </div>
+          </div>
+
+          <div id="tkNoteWrap" hidden><h3>หมายเหตุถึงลูกค้า</h3><div class="note-box" id="tkNote"></div></div>
+          <div id="tkInternalWrap" hidden><h3>หมายเหตุภายในร้าน</h3><div class="note-box internal" id="tkInternal"></div></div>
+
+          <p id="ticketError" class="notice error" role="alert" hidden></p>
+          <div class="status-actions" id="tkActions"></div>
+
+          <h3>ประวัติ</h3>
+          <ul class="timeline small" id="tkEvents"></ul>
+        </div>
+      </article>
+    </aside>
+  </main>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
