@@ -358,3 +358,16 @@ textarea { min-height: 76px; resize: vertical; }
 .new-req { display: grid; gap: 2px; width: 100%; padding: 16px 18px; text-align: left; cursor: pointer; background: var(--yellow); }
 .new-req b { font-size: 19px; }
 @media (max-width: 959px) { #reqEmptySide { display: none; } }
+
+/* floating chat button (customer pages) */
+.chat-fab { position: fixed; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 35; min-height: 52px; padding: 10px 20px; border: 2px solid var(--black); border-radius: 999px; background: var(--yellow); color: var(--black); font-weight: 800; font-size: 16px; box-shadow: 0 6px 0 rgba(0,0,0,.2); cursor: pointer; }
+.chat-menu { position: fixed; right: 16px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); z-index: 35; width: min(300px, calc(100vw - 32px)); background: var(--white); border: 2px solid var(--black); border-radius: var(--radius); padding: 12px; display: grid; gap: 8px; box-shadow: 0 8px 0 rgba(0,0,0,.15); }
+.chat-menu[hidden] { display: none; }
+.chat-head { margin: 0 0 2px; font-weight: 800; }
+.chat-opt { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 48px; padding: 8px 14px; border: 2px solid var(--black); border-radius: var(--radius-sm); text-decoration: none; color: var(--black); }
+.chat-opt span { color: var(--ink-2); font-size: 14px; }
+.chat-opt.line { background: var(--black); color: var(--yellow); }
+.chat-opt.line span { color: #E8E3C8; }
+/* keep page content clear of the button; hide it while the "paid?" prompt is open */
+.pay-wrap, .home { padding-bottom: 96px; }
+.paid-prompt:not([hidden]) ~ .chat-fab, .paid-prompt:not([hidden]) ~ .chat-menu { display: none; }
