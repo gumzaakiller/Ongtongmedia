@@ -6,12 +6,12 @@ export const BANK_APPS = [
   { id: 'kplus', icon: '/img/banks/kplus.webp',    name: 'K PLUS',          bank: 'กสิกรไทย',   android: 'com.kasikorn.retail.mbanking.wap', ios: '361170631' },
   { id: 'scb', icon: '/img/banks/scb.webp',      name: 'SCB EASY',        bank: 'ไทยพาณิชย์', android: 'com.scb.phone',                    ios: '568388474' },
   { id: 'ktb', icon: '/img/banks/ktb.webp',      name: 'Krungthai NEXT',  bank: 'กรุงไทย',    android: 'ktbcs.netbank',                    ios: '436753378' },
-  { id: 'paotang',  short: 'เป๋า',  name: 'เป๋าตัง',          bank: 'กรุงไทย',    android: 'com.ktb.customer.qr',              ios: '1324902182' },
+  { id: 'paotang', icon: '/img/banks/paotang.webp',  name: 'เป๋าตัง',          bank: 'กรุงไทย',    android: 'com.ktb.customer.qr',              ios: '1324902182' },
   { id: 'bbl', icon: '/img/banks/bbl.webp',      name: 'Bangkok Bank',    bank: 'กรุงเทพ',    android: 'com.bbl.mobilebanking',            ios: '660238716' },
-  { id: 'krungsri', short: 'ศรี', name: 'krungsri',        bank: 'กรุงศรี',     android: 'com.krungsri.kma',                 ios: '571873195' },
   { id: 'ttb', icon: '/img/banks/ttb.webp',      name: 'ttb touch',       bank: 'ทีทีบี',      android: 'com.TMBTOUCH.PRODUCTION',          ios: '884079963' },
   { id: 'mymo', icon: '/img/banks/mymo.webp',     name: 'MyMo',            bank: 'ออมสิน',     androidSearch: 'MyMo GSB',                   ios: '987047466' },
-  { id: 'baac', icon: '/img/banks/baac.webp',     name: 'BAAC Mobile',     bank: 'ธ.ก.ส.',     androidSearch: 'BAAC Mobile',                ios: '1591473167' }
+  { id: 'baac', icon: '/img/banks/baac.webp',     name: 'BAAC Mobile',     bank: 'ธ.ก.ส.',     androidSearch: 'BAAC Mobile',                ios: '1591473167' },
+  { id: 'truemoney', icon: '/img/banks/truemoney.webp', name: 'TrueMoney', bank: 'ทรูมันนี่', android: 'th.co.truemoney.wallet', ios: '663885752' }
 ];
 
 // In-app browsers (Messenger/Facebook/LINE) block downloads and app links, so the pay page
