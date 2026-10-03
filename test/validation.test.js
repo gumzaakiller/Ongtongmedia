@@ -66,3 +66,14 @@ test('pay-link tokens are 43-char base64url and unique', () => {
   assert.equal(tokens.size, 500);
   for (const t of tokens) assert.match(t, TOKEN_RE);
 });
+
+test('QR matrix encodes PromptPay payloads (decode check done with OpenCV during development)', async () => {
+  const { qrMatrix, qrPng } = await import('../src/lib/qr.js');
+  const p = promptPayPayload('0882965924', 85050);
+  const m = qrMatrix(p);
+  assert.ok(m.size >= 25 && m.size <= 45, `size ${m.size}`);
+  // finder pattern corners are dark
+  assert.ok(m.dark(0, 0) && m.dark(m.size - 1, 0) && m.dark(0, m.size - 1));
+  const png = await qrPng(p);
+  assert.equal(new DataView(png.buffer).getUint32(16), (m.size + 8) * 8); // IHDR width
+});

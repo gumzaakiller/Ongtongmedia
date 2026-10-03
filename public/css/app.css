@@ -193,3 +193,29 @@ textarea { min-height: 76px; resize: vertical; }
 .mt-8 { margin-top: 8px; }
 .mt-16 { margin-top: 16px; }
 .panel h3.flat { border: 0; padding-top: 0; }
+
+/* ---------- customer pay page ---------- */
+.pay-wrap { max-width: 520px; margin: 0 auto; padding: 16px 16px 40px; display: grid; gap: 16px; }
+.pay-wrap > * { min-width: 0; }
+#content { display: grid; gap: 16px; }
+#content[hidden] { display: none; }
+.pay-page .ticket-head .badge { position: static; display: inline-block; margin-top: 10px; }
+.pay-page .ticket-head .no { overflow-wrap: anywhere; }
+.status-box { margin: 0; padding: 14px 16px; border-radius: var(--radius-sm); font-weight: 700; white-space: pre-line; border: 2px solid var(--black); background: var(--white); }
+.status-box.awaiting_verification { background: var(--blue-bg); color: var(--blue); border-color: var(--blue); }
+.status-box.paid, .status-box.processing, .status-box.completed { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+.status-box.cancelled, .status-box.pending { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+.pay-card { background: var(--white); border: 2px solid var(--black); border-radius: var(--radius); padding: 16px 18px 18px; }
+.pay-card h2 { font-size: 19px; margin: 0 0 8px; }
+.qr-card { text-align: center; }
+.qr-amount { font-size: 34px; font-weight: 800; line-height: 1.2; }
+.qr-img { display: block; width: min(100%, 300px); height: auto; aspect-ratio: 1; margin: 12px auto 14px; border: 2px solid var(--black); border-radius: 12px; image-rendering: pixelated; background: var(--white); }
+.bank { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 14px; margin: 8px 0 0; align-items: center; }
+.bank dt { color: var(--ink-2); font-size: 14px; }
+.bank dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.copy-row { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+.copy-row .num { font-size: 18px; letter-spacing: .02em; }
+.btn.small-btn { min-height: 40px; padding: 6px 14px; font-size: 14px; flex: none; }
+.center { text-align: center; }
+.pay-foot { text-align: center; padding: 8px 0; }
+.pay-foot a { white-space: nowrap; }

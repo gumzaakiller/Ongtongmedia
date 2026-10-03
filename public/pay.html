@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#000000">
+  <title>ชำระเงิน | อองตองมีเดีย</title>
+  <link rel="icon" href="/shop-logo.png">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/pay.js"></script>
+</head>
+<body class="pay-page">
+<header class="topbar">
+  <img src="/shop-logo.png" width="40" height="40" alt="">
+  <div><div class="shop" id="shopName">อองตองมีเดีย</div><div class="role">ใบแจ้งชำระเงิน</div></div>
+</header>
+
+<main class="pay-wrap">
+  <noscript><p class="notice error">กรุณาเปิด JavaScript เพื่อดูยอดชำระ</p></noscript>
+  <p id="loading" class="notice">กำลังโหลดรายการ...</p>
+  <section id="errorBox" class="notice error" role="alert" hidden></section>
+
+  <div id="content" hidden>
+    <p id="statusBox" class="status-box" role="status"></p>
+
+    <article class="ticket">
+      <div class="ticket-head">
+        <div class="no" id="orderNo"></div>
+        <div class="title" id="orderTitle"></div>
+        <span class="badge" id="statusBadge"></span>
+      </div>
+      <div class="perf" aria-hidden="true"></div>
+      <div class="ticket-body">
+        <table class="lines num"><tbody id="lines"></tbody></table>
+        <div class="sum num">
+          <div id="subRow"><span>รวม</span><span id="sub"></span></div>
+          <div id="discRow"><span>ส่วนลด</span><span id="disc"></span></div>
+          <div class="grand"><span>ยอดชำระ</span><span id="total"></span></div>
+        </div>
+        <div id="noteWrap" hidden><h3>หมายเหตุจากร้าน</h3><div class="note-box" id="note"></div></div>
+      </div>
+    </article>
+
+    <section id="qrCard" class="pay-card qr-card" hidden aria-labelledby="qrTitle">
+      <h2 id="qrTitle">สแกนจ่ายด้วยพร้อมเพย์</h2>
+      <div class="qr-amount num" id="qrAmount"></div>
+      <img id="qrImg" class="qr-img" width="328" height="328" alt="QR พร้อมเพย์สำหรับยอดนี้">
+      <a id="qrSave" class="btn primary block" download>บันทึกรูป QR</a>
+      <p class="hint">ยอดเงินอยู่ใน QR แล้ว เปิดแอปธนาคาร แล้วสแกน หรือเลือกรูป QR ที่บันทึกไว้จากอัลบั้ม</p>
+    </section>
+
+    <section id="bankCard" class="pay-card" hidden aria-labelledby="bankTitle">
+      <h2 id="bankTitle">หรือโอนเข้าบัญชีร้าน</h2>
+      <dl class="bank">
+        <dt>ธนาคาร</dt><dd id="bankName"></dd>
+        <dt>ชื่อบัญชี</dt><dd id="accountName"></dd>
+        <dt id="accountNoLabel">เลขบัญชี</dt>
+        <dd id="accountNoRow" class="copy-row"><span class="num" id="accountNo"></span><button class="btn small-btn" type="button" id="copyAccount">คัดลอก</button></dd>
+        <dt>พร้อมเพย์</dt>
+        <dd class="copy-row"><span class="num" id="promptPayId"></span><button class="btn small-btn" type="button" id="copyPromptPay">คัดลอก</button></dd>
+      </dl>
+      <p class="hint">กรุณาโอนให้ตรงยอด <b id="exactAmount" class="num"></b></p>
+    </section>
+
+    <section class="pay-card" aria-labelledby="notifyTitle">
+      <h2 id="notifyTitle">ชำระแล้ว แจ้งร้านได้ที่นี่</h2>
+      <p class="hint" id="notifyHint">กดปุ่มด้านล่าง ระบบจะพิมพ์เลขที่รายการให้ แล้วแนบรูปสลิปในแชท LINE ของร้าน</p>
+      <a id="lineBtn" class="btn primary block" rel="noopener">แจ้งชำระผ่าน LINE</a>
+      <p class="small muted center" id="lineId"></p>
+    </section>
+
+    <footer class="pay-foot small muted">
+      สอบถามเพิ่มเติม โทร <a href="tel:0804938357">080-493-8357</a> หรือ <a href="tel:0882965924">088-296-5924</a>
+    </footer>
+  </div>
+</main>
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

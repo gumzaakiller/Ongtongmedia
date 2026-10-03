@@ -22,7 +22,9 @@ async function assetFetch(request) {
   return new Response('Not found', { status: 404 });
 }
 
-const env = makeEnv({ ASSETS: { fetch: assetFetch }, APP_ENV: 'staging' });
+// Shop details (name, PromptPay, bank) come from wrangler.jsonc so previews match the real page.
+const { vars } = JSON.parse(await readFile(new URL('../wrangler.jsonc', import.meta.url), 'utf8'));
+const env = makeEnv({ ...vars, ASSETS: { fetch: assetFetch }, APP_ENV: 'staging' });
 const port = Number(process.argv[2] || 8787);
 http.createServer(async (req, res) => {
   const chunks = []; for await (const c of req) chunks.push(c);

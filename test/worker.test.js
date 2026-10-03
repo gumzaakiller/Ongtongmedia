@@ -159,7 +159,8 @@ test('customer pay link', async t => {
     const text = JSON.stringify(r.data);
     assert.equal(r.data.order.orderNo, order.orderNo);
     assert.equal(r.data.order.totalSatang, 85050);
-    for (const secret of ['ลูกค้าประจำ', '0898765432', 'somchai', 'customer', 'public_token', token]) assert.ok(!text.includes(secret), secret);
+    for (const secret of ['ลูกค้าประจำ', '0898765432', 'somchai', 'customer', 'public_token', 'internal']) assert.ok(!text.includes(secret), secret);
+    assert.equal(r.data.qrImageUrl, `/api/pay/${token}/qr.png`);
     assert.equal(r.data.shop.lineOaId, '@653ercqc');
     assert.equal(r.headers.get('X-Robots-Tag'), 'noindex, nofollow');
     assert.equal(r.headers.get('Cache-Control'), 'no-store');
@@ -168,6 +169,14 @@ test('customer pay link', async t => {
     const r = await c.call('/api/pay/' + token);
     assert.ok(r.data.promptPayPayload.includes('5406850.50'));
     assert.equal(r.data.canSubmitSlip, true);
+  });
+  await t.test('QR image is a PNG for the D1 amount', async () => {
+    const r = await worker.fetch(new Request(`${ORIGIN}/api/pay/${token}/qr.png`, { headers: { 'CF-Connecting-IP': '2.2.2.2' } }), env);
+    assert.equal(r.status, 200); assert.equal(r.headers.get('Content-Type'), 'image/png');
+    assert.equal(r.headers.get('Cache-Control'), 'no-store');
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    assert.deepEqual([...bytes.slice(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+    assert.equal((await c.call('/api/pay/' + 'C'.repeat(43) + '/qr.png')).status, 404);
   });
   await t.test('wrong or malformed tokens get the same 404', async () => {
     const wrong = await c.call('/api/pay/' + 'A'.repeat(43));
@@ -180,6 +189,8 @@ test('customer pay link', async t => {
     await c.call(`/api/admin/orders/${order.orderNo}/status`, { method: 'POST', body: { to: 'cancelled', version: 1 } });
     const r = await c.call('/api/pay/' + token);
     assert.equal(r.data.order.status, 'cancelled'); assert.equal(r.data.promptPayPayload, null); assert.equal(r.data.canSubmitSlip, false);
+    assert.equal(r.data.qrImageUrl, null);
+    assert.equal((await c.call('/api/pay/' + token + '/qr.png')).status, 409);
   });
   await t.test('link guessing is rate limited per IP', async () => {
     let last;
