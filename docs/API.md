@@ -12,6 +12,7 @@
 | GET | `/api/pay/:token/qr.png` | รูป QR พร้อมเพย์ (PNG) ตามยอดใน D1 · เฉพาะสถานะ `pending` |
 | POST | `/api/pay/:token/slip` | ลูกค้าส่งสลิป: multipart `slip` (PNG/JPG/WEBP ≤ 8 MB ตรวจจากเนื้อไฟล์) + `note` · header `Idempotency-Key` · 10 ครั้ง/10 นาที/IP |
 | GET | `/pay/:token` | หน้าเว็บลูกค้า (`public/pay.html`) |
+| POST | `/api/line/webhook` | LINE Messaging API webhook · ตรวจ `x-line-signature` (HMAC-SHA256) · ปิด (404) จนกว่าจะตั้ง `LINE_CHANNEL_SECRET` + `LINE_CHANNEL_ACCESS_TOKEN` |
 
 ข้อมูลที่ลูกค้าเห็น **ไม่มี** หมายเหตุภายใน ข้อมูลติดต่อลูกค้า หรือ id ภายใน
 

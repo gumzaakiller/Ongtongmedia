@@ -1,4 +1,5 @@
 import { $, STATUS_LABEL, api, baht, copyText, el, show, toast } from './util.js';
+import { BANK_APPS, bankLink, platform } from './banks.js';
 
 // Customer-facing wording per status (what happened + what to do next).
 const STATUS_MESSAGE = {
@@ -63,17 +64,50 @@ function render(data) {
 
   // slip upload (only while the bill is open)
   $('uploadCard').hidden = !data.canSubmitSlip;
+  state.canSubmitSlip = data.canSubmitSlip;
+  if (!data.canSubmitSlip) $('paidPrompt').hidden = true;
 
   // LINE
   const canNotify = order.status === 'pending';
   $('notifyTitle').textContent = canNotify ? (data.canSubmitSlip ? 'หรือแจ้งทาง LINE' : 'แจ้งชำระทาง LINE') : 'ติดต่อร้าน';
   $('notifyHint').hidden = !canNotify;
   $('lineBtn').textContent = canNotify ? 'แจ้งชำระผ่าน LINE' : 'ติดต่อร้านทาง LINE';
-  if (shop.lineOaId) { $('lineBtn').href = lineUrl(shop.lineOaId, data); $('lineId').textContent = `LINE ${shop.lineOaId}`; }
-  else $('lineBtn').hidden = true;
+  if (shop.lineOaId) {
+    $('lineBtn').href = $('paidPromptLine').href = lineUrl(shop.lineOaId, data);
+    $('lineId').textContent = `LINE ${shop.lineOaId}`;
+  } else { $('lineBtn').hidden = true; $('paidPromptLine').hidden = true; }
 
   $('loading').hidden = true; $('content').hidden = false;
 }
+
+// ---- bank apps + "paid? send the slip" prompt when the customer comes back ----
+const state = { leftToPay: false, canSubmitSlip: false };
+const os = platform();
+$('bankApps').replaceChildren(...BANK_APPS.map(app => el('a', {
+  class: 'bank-app', href: bankLink(app, os), rel: 'noopener', 'data-bank': app.id,
+  onclick: () => { state.leftToPay = true; }
+}, el('b', { text: app.name }), el('span', { text: app.bank }))));
+$('qrSave').addEventListener('click', e => {
+  state.leftToPay = true;
+  if (os === 'ios') {
+    // iPhone saves downloads to Files, but banking apps read from Photos: long-press the image instead.
+    e.preventDefault();
+    $('qrImg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('qrImg').classList.add('pulse'); setTimeout(() => $('qrImg').classList.remove('pulse'), 2400);
+    toast('กดค้างที่รูป QR แล้วเลือก "บันทึกลงในรูปภาพ"');
+  }
+});
+document.addEventListener('visibilitychange', () => {
+  // Back from the banking app: offer the next step right away.
+  if (document.visibilityState === 'visible' && state.leftToPay && state.canSubmitSlip) $('paidPrompt').hidden = false;
+});
+$('paidPromptClose').addEventListener('click', () => { $('paidPrompt').hidden = true; state.leftToPay = false; });
+$('paidPromptUpload').addEventListener('click', () => {
+  $('paidPrompt').hidden = true; state.leftToPay = false;
+  $('uploadCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('slipFile').click();
+});
+$('paidPromptLine').addEventListener('click', () => { $('paidPrompt').hidden = true; state.leftToPay = false; });
 
 $('copyAccount').addEventListener('click', async () => toast(await copyText($('accountNo').textContent.replace(/\D/g, '')) ? 'คัดลอกเลขบัญชีแล้ว' : 'คัดลอกไม่สำเร็จ'));
 $('copyPromptPay').addEventListener('click', async () => toast(await copyText($('promptPayId').textContent) ? 'คัดลอกเลขพร้อมเพย์แล้ว' : 'คัดลอกไม่สำเร็จ'));

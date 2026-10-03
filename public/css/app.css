@@ -277,3 +277,22 @@ textarea { min-height: 76px; resize: vertical; }
 .file-pick { display: flex; align-items: center; justify-content: center; min-height: 56px; border: 2px dashed var(--black); border-radius: var(--radius-sm); background: var(--paper); font-weight: 700; cursor: pointer; text-align: center; padding: 10px; }
 .file-pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .file-pick:focus-within { outline: 3px solid var(--black); outline-offset: 2px; }
+
+/* bank app buttons */
+.bank-apps-title { font-size: 16px; margin: 20px 0 10px; text-align: left; }
+.bank-apps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bank-app { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 64px; padding: 8px 4px; border: 2px solid var(--black); border-radius: var(--radius-sm); background: var(--white); color: var(--black); text-decoration: none; line-height: 1.25; text-align: center; }
+.bank-app b { font-size: 14px; overflow-wrap: anywhere; }
+.bank-app span { font-size: 12px; color: var(--ink-2); }
+.bank-app:active { background: var(--yellow); }
+.qr-card .hint { text-align: left; }
+
+/* shown when the customer returns from a banking app */
+.paid-prompt { position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 40; background: var(--black); color: var(--white); border: 2px solid var(--yellow); border-radius: var(--radius); padding: 16px 16px 14px; box-shadow: 0 8px 0 rgba(0,0,0,.2); max-width: 496px; margin: 0 auto; }
+.paid-prompt b { display: block; padding-right: 32px; font-size: 17px; color: var(--yellow); }
+.paid-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.paid-close { position: absolute; top: 6px; right: 6px; width: 40px; height: 40px; border: 0; background: none; color: var(--white); font-size: 24px; cursor: pointer; }
+.qr-img { -webkit-touch-callout: default; user-select: auto; }
+.qr-img.pulse { outline: 6px solid var(--yellow); outline-offset: 4px; }
+@media (prefers-reduced-motion: no-preference) { .qr-img.pulse { animation: pulse 0.8s ease-in-out 3; } }
+@keyframes pulse { 50% { outline-color: var(--black); } }

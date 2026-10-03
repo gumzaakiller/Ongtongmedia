@@ -1,6 +1,6 @@
 // Minimal Cloudflare D1 stand-in on Node's built-in SQLite, for tests only.
 // Runs the real migrations, so CHECKs, FKs, triggers and SQL behave like D1.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 
 class Statement {
@@ -24,7 +24,8 @@ export class FakeD1 {
   constructor() {
     this.db = new DatabaseSync(':memory:');
     this.db.exec('PRAGMA foreign_keys=ON');
-    for (const f of ['0001_initial.sql', '0002_payment_system.sql']) this.db.exec(readFileSync(new URL(`../../migrations/${f}`, import.meta.url), 'utf8'));
+    const dir = new URL('../../migrations/', import.meta.url);
+    for (const f of readdirSync(dir).filter(f => f.endsWith('.sql')).sort()) this.db.exec(readFileSync(new URL(f, dir), 'utf8'));
   }
   prepare(sql) { return new Statement(this.db, sql); }
   // D1 batches run as one transaction: any failure rolls back every statement.

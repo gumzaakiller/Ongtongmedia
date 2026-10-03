@@ -2,11 +2,14 @@ import { AppError, applySecurityHeaders, json, sameOrigin } from './lib/http.js'
 import { shopConfig } from './config.js';
 import { handleAdmin } from './routes/admin.js';
 import { handlePayApi, handlePayQr, handlePaySlip } from './routes/pay.js';
+import { handleLineWebhook } from './services/line.js';
 
 async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
+  // LINE calls this server-to-server (no Origin header); it is authenticated by its HMAC signature instead.
+  if (path === '/api/line/webhook' && method === 'POST') return handleLineWebhook(request, env);
   if (path.startsWith('/api/') && !['GET', 'HEAD'].includes(method)) sameOrigin(request);
 
   if (path === '/api/health' && method === 'GET') {

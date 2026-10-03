@@ -11,10 +11,15 @@ const isUnique = (e, what) => String(e?.message || e).includes('UNIQUE') && Stri
 // ---------------------------------------------------------------------------
 // Customer: upload a slip from the pay page → stored privately in R2, order becomes awaiting_verification.
 // ---------------------------------------------------------------------------
-export async function submitSlip(env, token, { bytes, mime, note, requestKey }) {
-  const db = env.DB;
-  const order = await db.prepare('SELECT id,order_no,status FROM orders WHERE public_token=?').bind(token).first();
+export async function submitSlip(env, token, slip) {
+  const order = await env.DB.prepare('SELECT id,order_no,status FROM orders WHERE public_token=?').bind(token).first();
   if (!order) throw new AppError('ไม่พบรายการชำระเงินนี้ กรุณาตรวจสอบลิงก์ หรือติดต่อร้าน', 404);
+  return submitSlipForOrder(env, order, slip);
+}
+
+// order = { id, order_no, status } already loaded by the caller (pay page or LINE webhook).
+export async function submitSlipForOrder(env, order, { bytes, mime, note, requestKey, method = 'promptpay' }) {
+  const db = env.DB;
 
   // Same request sent again (network retry): answer with what was saved the first time.
   const previous = await db.prepare('SELECT order_id FROM payments WHERE request_key=?').bind(requestKey).first();
@@ -38,9 +43,9 @@ export async function submitSlip(env, token, { bytes, mime, note, requestKey }) 
     await db.batch([
       guard(db, "SELECT count(*) FROM orders WHERE id=? AND status='pending'", order.id),
       db.prepare(`INSERT INTO payments(order_id,request_key,amount_satang,method,slip_key,slip_sha256,slip_mime,slip_size,customer_note,submitted_at)
-        SELECT id,?,total_satang,'promptpay',?,?,?,?,?,? FROM orders WHERE id=?`).bind(requestKey, key, sha, mime, bytes.length, note, now, order.id),
+        SELECT id,?,total_satang,?,?,?,?,?,?,? FROM orders WHERE id=?`).bind(requestKey, method, key, sha, mime, bytes.length, note, now, order.id),
       db.prepare("UPDATE orders SET status='awaiting_verification', version=version+1, updated_at=? WHERE id=?").bind(now, order.id),
-      db.prepare("INSERT INTO order_events(order_id,from_status,to_status,note,created_at) VALUES(?,'pending','awaiting_verification','ลูกค้าส่งหลักฐานการชำระ',?)").bind(order.id, now)
+      db.prepare("INSERT INTO order_events(order_id,from_status,to_status,note,created_at) VALUES(?,'pending','awaiting_verification',?,?)").bind(order.id, note.startsWith('ส่งทาง LINE') ? 'ลูกค้าส่งสลิปทาง LINE' : 'ลูกค้าส่งหลักฐานการชำระ', now)
     ]);
   } catch (e) {
     // The DB write failed, so the uploaded file is not referenced: remove it (keeps R2 free of orphans).

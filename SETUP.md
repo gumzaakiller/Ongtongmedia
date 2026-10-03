@@ -78,3 +78,21 @@ session ที่หมดอายุและ rate-limit ที่หมดช
 เก็บ R2 เป็น private เสมอ ไม่จำเป็นต้องเปิด CORS หรือ public URL เพราะ Worker รับอัปโหลดและตรวจสิทธิ์ก่อนส่งสลิป
 หากปริมาณสแปมสูง สามารถเพิ่ม Turnstile/WAF ภายหลังได้
 ต้องสำรอง/กำหนดนโยบายอายุข้อมูลลูกค้าและสลิปตามการใช้งานของร้าน
+
+## เชื่อม LINE OA (ไม่บังคับ — ปิดอยู่จนกว่าจะตั้งค่า)
+ลูกค้ากด "ส่งทาง LINE" → แชทเปิดพร้อมเลขที่รายการ → ส่งรูปสลิปในแชท → ระบบเก็บสลิปใน R2 และขึ้น "รอตรวจสลิป" ในหน้าภาพรวมเอง
+ข้อความแชททั่วไประบบจะไม่ตอบ ร้านตอบเองใน LINE OA Manager ได้ตามปกติ
+
+> ⚠️ LINE OA ส่ง webhook ได้ที่เดียว ถ้าต่อแชทบอท/ระบบอื่นไว้ ระบบนั้นจะหยุดรับข้อความ ตรวจก่อนเปิด
+
+1. [LINE Developers Console](https://developers.line.biz/console/) → Provider ของร้าน → channel แบบ **Messaging API** ของ @653ercqc
+   (ถ้ายังไม่มี: LINE OA Manager → ตั้งค่า → Messaging API → เปิดใช้งาน)
+2. แท็บ Basic settings → คัดลอก **Channel secret**
+3. แท็บ Messaging API → **Channel access token (long-lived)** → Issue → คัดลอก
+4. Cloudflare → Worker `ongtongmedia` → Settings → Variables and secrets → เพิ่ม **Secret** 2 ตัว:
+   `LINE_CHANNEL_SECRET` และ `LINE_CHANNEL_ACCESS_TOKEN`
+5. LINE Developers → Messaging API → Webhook URL: `https://ongtongmedia.gumzaakiller.workers.dev/api/line/webhook` → **Verify** → เปิด **Use webhook**
+6. LINE OA Manager → ตั้งค่าการตอบกลับ: เปิด **แชท** (ให้ร้านยังตอบเองได้) และ **Webhook**
+7. migration `0003_line_links.sql` ต้องรันบน D1 แล้ว (`npm run db:remote`)
+
+ทดสอบ: เปิดลิงก์ชำระเงิน → "ส่งทาง LINE" → ส่งข้อความ → ระบบตอบ "รับเลขที่ ... แล้ว" → ส่งรูปสลิป → ระบบตอบ "ได้รับสลิป..." → หน้า admin ขึ้นรอตรวจสลิป

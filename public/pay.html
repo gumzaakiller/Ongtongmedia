@@ -46,8 +46,10 @@
       <h2 id="qrTitle">สแกนจ่ายด้วยพร้อมเพย์</h2>
       <div class="qr-amount num" id="qrAmount"></div>
       <img id="qrImg" class="qr-img" width="328" height="328" alt="QR พร้อมเพย์สำหรับยอดนี้">
-      <a id="qrSave" class="btn primary block" download>บันทึกรูป QR</a>
-      <p class="hint">ยอดเงินอยู่ใน QR แล้ว เปิดแอปธนาคาร แล้วสแกน หรือเลือกรูป QR ที่บันทึกไว้จากอัลบั้ม</p>
+      <a id="qrSave" class="btn primary block" download>1. บันทึกรูป QR</a>
+      <h3 class="bank-apps-title">2. เปิดแอปธนาคารของคุณ</h3>
+      <div class="bank-apps" id="bankApps"></div>
+      <p class="hint">ในแอปเลือก "สแกน" แล้วเลือกรูป QR จากอัลบั้ม ยอดเงินจะขึ้นให้อัตโนมัติ<br>บันทึกรูปไม่ได้? กดค้างที่รูป QR แล้วเลือกบันทึกรูป<br>ถ้ากดปุ่มธนาคารแล้วไปหน้าร้านค้าแอป ให้กด "เปิด" ที่หน้านั้น</p>
     </section>
 
     <section id="bankCard" class="pay-card" hidden aria-labelledby="bankTitle">
@@ -91,6 +93,14 @@
     </footer>
   </div>
 </main>
+<div id="paidPrompt" class="paid-prompt" role="dialog" aria-labelledby="paidPromptTitle" hidden>
+  <button id="paidPromptClose" class="paid-close" type="button" aria-label="ปิด">×</button>
+  <b id="paidPromptTitle">โอนเสร็จแล้วใช่ไหม? ส่งสลิปให้ร้านได้เลย</b>
+  <div class="paid-actions">
+    <button id="paidPromptUpload" class="btn yellow" type="button">ส่งสลิปที่นี่</button>
+    <a id="paidPromptLine" class="btn on-dark" rel="noopener">ส่งทาง LINE</a>
+  </div>
+</div>
 <div id="toast" class="toast" role="status" hidden></div>
 </body>
 </html>
