@@ -39,6 +39,22 @@ npm run build
 - การเขียน D1 กับ R2 ไม่ใช่ transaction เดียวกัน หากบริการหยุดระหว่างขั้นตอนอาจมีไฟล์ R2 ที่ไม่มีคำสั่งซื้ออ้างถึง ควรตรวจไฟล์ตกค้างเป็นระยะ
 - local tests ไม่เขียนข้อมูลบน Cloudflare จริง
 
+## บัญชีและการยืนยันชำระ
+- `POST /api/admin/payments` รับ `{ "orderId": "OTM-..." }` สร้างหรือคืน payment เดิม ยอดและสลิปอ่านจาก order เท่านั้น คำสั่งซื้อใหม่สร้าง payment ให้อัตโนมัติ
+- `POST /api/admin/payments/:id/confirm` ยืนยันเต็มยอด บันทึก paid_at, สถานะ order และ income ใน D1 batch transaction เดียว การกดซ้ำหรือพร้อมกันไม่เพิ่มรายรับซ้ำ (`income.order_id UNIQUE`) และไม่เปลี่ยนเวลารับเงินเดิม
+- `GET /api/admin/payments/:id/slip` อ่านสลิปจาก R2 binding SLIPS ผ่าน session ผู้ดูแลเท่านั้น
+- `GET /api/admin/dashboard`, `/api/admin/income`, `/api/admin/expenses`, `/api/admin/payments/pending` อ่านข้อมูลจริง รายการแบ่งหน้าด้วย `offset` และ `nextOffset`
+- `POST /api/admin/expenses` รับ `requestId` (UUID เดิมเมื่อ retry), `amount` (บาท), `category`, `description`, `expenseDate` (YYYY-MM-DD)
+- ทุก endpoint ใช้ session เดิม และคำขอเขียนต้องมี Origin ตรงกับเว็บ รายรับสร้างจากการยืนยันชำระเท่านั้น ไม่เปิดให้เพิ่มรายรับจากลูกค้า
+- Dashboard: ยอดขายวันนี้ไม่รวม order ยกเลิก; รับเงินแล้วเป็นยอดสะสม; รอตรวจสอบนับ payment pending ที่ order ไม่ยกเลิก; รายรับ/รายจ่าย/กำไรเป็นเดือนปัจจุบันตามเวลาไทย
+- ไม่รองรับจ่ายบางส่วนหรือคืนเงิน จึงไม่อนุญาตเปลี่ยน order ที่รับเงินแล้วกลับเป็นรอชำระ/ยกเลิก และไม่ให้เริ่มงานก่อนยืนยันรับเงิน
+- [migration 0002](migrations/0002_accounting.sql) เพิ่มตารางสำหรับฐานข้อมูลใหม่ด้วย IF NOT EXISTS และตรงกับ schema production ที่ตรวจแล้ว ไม่มี DROP หรือแก้ข้อมูลเดิม ห้ามรัน migration บน production โดยอัตโนมัติจาก PR นี้
+
+## Preview ก่อน merge
+รัน `npm run preview` แล้วเปิด http://127.0.0.1:8788/ เลือกผู้ดูแล รหัส `local-preview-admin-only` ใช้เฉพาะ preview ในเครื่อง ฐานข้อมูลและ R2 จำลองจะหายเมื่อปิด process ไม่ใช้ secret หรือข้อมูล production และปิดการรับชำระจริงไว้
+
+Preview มีคำสั่งซื้อจำลอง 250 บาทให้ทดลองยืนยันชำระ เพิ่มรายจ่าย และดู dashboard ได้ รัน `npm test`, `npm run build`, `npx wrangler deploy --dry-run` ก่อนส่ง PR; GitHub workflow Checks รันรายการเดียวกัน ห้าม merge จนตรวจ preview และ checks ผ่าน การ deploy production เป็นขั้นตอนแยกหลัง review
+
 ## เอกสารอ้างอิง
 - [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)
 - [D1 bindings และ transactions](https://developers.cloudflare.com/d1/worker-api/d1-database/)
