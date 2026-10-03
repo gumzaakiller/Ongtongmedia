@@ -18,8 +18,8 @@ async function route(request, env) {
     return json({ ok: true, paymentsConfigured: shop.ready, env: shop.appEnv });
   }
   if (path === '/api/config' && method === 'GET') {
-    const { shopName, lineOaId, appEnv } = shopConfig(env);
-    return json({ shopName, lineOaId, env: appEnv });
+    const { shopName, lineOaId, facebookUrl, messengerUrl, appEnv } = shopConfig(env);
+    return json({ shopName, lineOaId, facebookUrl, messengerUrl, env: appEnv });
   }
   const pay = path.match(/^\/api\/pay\/([^/]+)(\/qr\.png|\/slip)?$/);
   if (pay && method === 'GET' && pay[2] !== '/slip') return pay[2] ? handlePayQr(request, env, pay[1]) : handlePayApi(request, env, pay[1]);

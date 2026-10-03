@@ -204,6 +204,6 @@ test('customer pay link', async t => {
   });
   await t.test('health and public config', async () => {
     assert.deepEqual((await c.call('/api/health')).data, { ok: true, paymentsConfigured: true, env: 'test' });
-    assert.deepEqual(Object.keys((await c.call('/api/config')).data).sort(), ['env', 'lineOaId', 'shopName']);
+    assert.deepEqual(Object.keys((await c.call('/api/config')).data).sort(), ['env', 'facebookUrl', 'lineOaId', 'messengerUrl', 'shopName']);
   });
 });

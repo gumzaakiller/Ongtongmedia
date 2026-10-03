@@ -23,7 +23,9 @@
     "BANK_NAME": "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (ธ.ก.ส.)",
     "ACCOUNT_NAME": "อองตองมีเดีย โดย นางสาววิภาวรรณ ปราบสงบ",
     "ACCOUNT_NO": "020253932875",
-    "LINE_OA_ID": "@653ercqc"
+    "LINE_OA_ID": "@653ercqc",
+    "FACEBOOK_PAGE_URL": "https://www.facebook.com/share/1CJCDCzXmf",
+    "FACEBOOK_PAGE_ID": ""
   },
   "env": {
     "staging": {
@@ -42,7 +44,9 @@
         "BANK_NAME": "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (ธ.ก.ส.)",
         "ACCOUNT_NAME": "อองตองมีเดีย โดย นางสาววิภาวรรณ ปราบสงบ",
         "ACCOUNT_NO": "020253932875",
-        "LINE_OA_ID": "@653ercqc"
+        "LINE_OA_ID": "@653ercqc",
+        "FACEBOOK_PAGE_URL": "https://www.facebook.com/share/1CJCDCzXmf",
+        "FACEBOOK_PAGE_ID": ""
       }
     }
   }

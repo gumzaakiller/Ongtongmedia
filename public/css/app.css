@@ -296,3 +296,10 @@ textarea { min-height: 76px; resize: vertical; }
 .qr-img.pulse { outline: 6px solid var(--yellow); outline-offset: 4px; }
 @media (prefers-reduced-motion: no-preference) { .qr-img.pulse { animation: pulse 0.8s ease-in-out 3; } }
 @keyframes pulse { 50% { outline-color: var(--black); } }
+
+/* Facebook / Messenger */
+.social { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.social[hidden] { display: none; }
+.social .btn:only-child { grid-column: 1 / -1; }
+.landing-actions { display: grid; gap: 8px; max-width: 320px; margin: 0 auto; }
+.landing-actions .btn { margin: 0; }

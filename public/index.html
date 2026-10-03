@@ -7,14 +7,19 @@
   <title>อองตองมีเดีย | ชำระเงิน</title>
   <link rel="icon" href="/shop-logo.png">
   <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/landing.js"></script>
 </head>
 <body>
 <main class="landing">
   <img src="/shop-logo.png" width="140" height="140" alt="โลโก้อองตองมีเดีย">
   <h1>อองตองมีเดีย</h1>
   <p class="muted">ถ้าได้รับลิงก์ชำระเงินจากร้าน กรุณาเปิดจากลิงก์นั้น<br>ยอดชำระและ QR พร้อมเพย์จะแสดงในหน้าของคุณ</p>
-  <a class="btn primary" href="https://line.me/R/ti/p/@653ercqc" rel="noopener">ติดต่อร้านทาง LINE</a>
-  <a class="btn" href="tel:0804938357">โทร 080-493-8357</a>
+  <div class="landing-actions">
+    <a class="btn primary" href="https://line.me/R/ti/p/@653ercqc" rel="noopener">ติดต่อร้านทาง LINE</a>
+    <a class="btn" id="messengerBtn" rel="noopener" hidden>Messenger</a>
+    <a class="btn" id="facebookBtn" rel="noopener" hidden>เพจ Facebook</a>
+    <a class="btn" href="tel:0804938357">โทร 080-493-8357</a>
+  </div>
   <p class="small muted mt-16"><a href="/admin">สำหรับร้าน: เข้าสู่ระบบผู้ดูแล</a></p>
 </main>
 </body>

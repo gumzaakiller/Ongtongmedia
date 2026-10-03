@@ -69,13 +69,18 @@ function render(data) {
 
   // LINE
   const canNotify = order.status === 'pending';
-  $('notifyTitle').textContent = canNotify ? (data.canSubmitSlip ? 'หรือแจ้งทาง LINE' : 'แจ้งชำระทาง LINE') : 'ติดต่อร้าน';
+  $('notifyTitle').textContent = canNotify ? (data.canSubmitSlip ? 'หรือแจ้งทางแชท' : 'แจ้งชำระทางแชท') : 'ติดต่อร้าน';
   $('notifyHint').hidden = !canNotify;
   $('lineBtn').textContent = canNotify ? 'แจ้งชำระผ่าน LINE' : 'ติดต่อร้านทาง LINE';
   if (shop.lineOaId) {
     $('lineBtn').href = $('paidPromptLine').href = lineUrl(shop.lineOaId, data);
     $('lineId').textContent = `LINE ${shop.lineOaId}`;
   } else { $('lineBtn').hidden = true; $('paidPromptLine').hidden = true; }
+
+  // Facebook page + Messenger chat (shown only when configured)
+  $('messengerBtn').hidden = !shop.messengerUrl; if (shop.messengerUrl) $('messengerBtn').href = shop.messengerUrl;
+  $('facebookBtn').hidden = !shop.facebookUrl; if (shop.facebookUrl) $('facebookBtn').href = shop.facebookUrl;
+  $('socialRow').hidden = !shop.messengerUrl && !shop.facebookUrl;
 
   $('loading').hidden = true; $('content').hidden = false;
 }

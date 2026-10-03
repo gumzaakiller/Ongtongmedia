@@ -77,3 +77,15 @@ test('QR matrix encodes PromptPay payloads (decode check done with OpenCV during
   const png = await qrPng(p);
   assert.equal(new DataView(png.buffer).getUint32(16), (m.size + 8) * 8); // IHDR width
 });
+
+test('Facebook page and Messenger links are validated', async () => {
+  const { shopConfig } = await import('../src/config.js');
+  const c = env => shopConfig(env);
+  assert.equal(c({ FACEBOOK_PAGE_URL: 'https://www.facebook.com/share/1CJCDCzXmf' }).facebookUrl, 'https://www.facebook.com/share/1CJCDCzXmf');
+  assert.equal(c({ FACEBOOK_PAGE_URL: 'javascript:alert(1)' }).facebookUrl, '');
+  assert.equal(c({ FACEBOOK_PAGE_URL: 'https://evil.example/facebook.com' }).facebookUrl, '');
+  assert.equal(c({ FACEBOOK_PAGE_ID: 'oongtong.media' }).messengerUrl, 'https://m.me/oongtong.media');
+  assert.equal(c({ FACEBOOK_PAGE_ID: '61550000000000' }).messengerUrl, 'https://m.me/61550000000000');
+  assert.equal(c({ FACEBOOK_PAGE_ID: 'x/../y' }).messengerUrl, '');
+  assert.equal(c({}).messengerUrl, '');
+});

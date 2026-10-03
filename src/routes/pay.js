@@ -25,7 +25,7 @@ export async function handlePayApi(request, env, token) {
   const { order, shop, payable } = await load(request, env, token);
   return json({
     order,
-    shop: { name: shop.shopName, bankName: shop.bankName, accountName: shop.accountName, accountNo: shop.accountNo, promptPayId: shop.promptPayId, lineOaId: shop.lineOaId },
+    shop: { name: shop.shopName, bankName: shop.bankName, accountName: shop.accountName, accountNo: shop.accountNo, promptPayId: shop.promptPayId, lineOaId: shop.lineOaId, facebookUrl: shop.facebookUrl, messengerUrl: shop.messengerUrl },
     // QR amount = orders.total_satang from D1. The browser only displays it.
     promptPayPayload: payable ? promptPayPayload(shop.promptPayId, order.totalSatang) : null,
     qrImageUrl: payable ? `/api/pay/${token}/qr.png` : null,
