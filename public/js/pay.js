@@ -1,5 +1,5 @@
 import { $, STATUS_LABEL, api, baht, copyText, el, show, toast } from './util.js';
-import { BANK_APPS, bankLink, platform } from './banks.js';
+import { BANK_APPS, bankLink, platform, inAppBrowser, externalBrowserUrl } from './banks.js';
 import { rememberRecent } from './recent.js';
 
 // Customer-facing wording per status (what happened + what to do next).
@@ -54,8 +54,7 @@ function render(data) {
   if (payable) {
     $('qrAmount').textContent = baht(order.totalSatang);
     $('qrImg').src = data.qrImageUrl;
-    $('qrSave').href = data.qrImageUrl;
-    $('qrSave').setAttribute('download', `QR-${order.orderNo}.png`);
+    prepareQrFile(data.qrImageUrl, `QR-${order.orderNo}.png`);
     $('bankName').textContent = shop.bankName || '—';
     $('accountName').textContent = shop.accountName;
     $('accountNo').textContent = shop.accountNo;
@@ -90,19 +89,68 @@ function render(data) {
 // ---- bank apps + "paid? send the slip" prompt when the customer comes back ----
 const state = { leftToPay: false, canSubmitSlip: false };
 const os = platform();
+const iab = inAppBrowser();
+
+// LINE can reopen the page in the phone's browser by itself; Messenger/Facebook need the customer's help.
+if (iab === 'line' && !new URL(location.href).searchParams.has('openExternalBrowser')) {
+  location.replace(externalBrowserUrl(location.href, os, iab));
+}
+function showInAppHelp(scroll = true) {
+  const out = externalBrowserUrl(location.href, os, iab);
+  $('iabBox').hidden = false;
+  $('iabOpen').hidden = !out;
+  if (out) $('iabOpen').href = out;
+  $('iabText').textContent = out
+    ? 'หน้านี้เปิดอยู่ในแอปแชท ซึ่งบันทึกรูป QR และเปิดแอปธนาคารไม่ได้ กดปุ่มด้านล่างเพื่อเปิดใน Chrome'
+    : 'หน้านี้เปิดอยู่ในแอปแชท ซึ่งบันทึกรูป QR และเปิดแอปธนาคารไม่ได้ กด ⋯ มุมขวาบน แล้วเลือก "เปิดในเบราว์เซอร์" (Safari)';
+  if (scroll) $('iabBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+if (iab === 'facebook') showInAppHelp(false);
+
 $('bankApps').replaceChildren(...BANK_APPS.map(app => el('a', {
   class: 'bank-app', href: bankLink(app, os), rel: 'noopener', 'data-bank': app.id,
-  onclick: () => { state.leftToPay = true; }
-}, el('b', { text: app.name }), el('span', { text: app.bank }))));
-$('qrSave').addEventListener('click', e => {
-  state.leftToPay = true;
-  if (os === 'ios') {
-    // iPhone saves downloads to Files, but banking apps read from Photos: long-press the image instead.
-    e.preventDefault();
-    $('qrImg').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    $('qrImg').classList.add('pulse'); setTimeout(() => $('qrImg').classList.remove('pulse'), 2400);
-    toast('กดค้างที่รูป QR แล้วเลือก "บันทึกลงในรูปภาพ"');
+  onclick: e => {
+    if (iab) { e.preventDefault(); showInAppHelp(); return; }
+    state.leftToPay = true;
   }
+},
+  app.icon ? el('img', { class: 'bank-icon', src: app.icon, alt: '', width: 44, height: 44, loading: 'lazy' })
+           : el('span', { class: 'bank-icon bank-icon-text', 'aria-hidden': 'true', text: app.short }),
+  el('b', { text: app.name }), el('span', { class: 'bank-sub', text: app.bank }))));
+
+// The QR is fetched ahead of time: iPhone only opens the share sheet straight from a tap.
+let qrFile = null;
+async function prepareQrFile(url, name) {
+  try {
+    const res = await fetch(url, { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    qrFile = new File([blob], name, { type: 'image/png' });
+  } catch { qrFile = null; }
+}
+function longPressHint() {
+  $('qrImg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('qrImg').classList.add('pulse'); setTimeout(() => $('qrImg').classList.remove('pulse'), 2400);
+  toast(os === 'ios' ? 'กดค้างที่รูป QR แล้วเลือก "บันทึกลงในรูปภาพ"' : 'กดค้างที่รูป QR แล้วเลือก "ดาวน์โหลดรูปภาพ"');
+}
+$('qrSave').addEventListener('click', async () => {
+  if (iab) { showInAppHelp(); return; }
+  state.leftToPay = true;
+  if (!qrFile) { longPressHint(); return; }
+  if (os === 'ios') {
+    // Share sheet → "บันทึกภาพ" puts it in Photos, where the banking apps look for it.
+    if (navigator.canShare?.({ files: [qrFile] })) {
+      try { await navigator.share({ files: [qrFile] }); toast('ถ้าเลือก "บันทึกภาพ" แล้ว รูป QR จะอยู่ในอัลบั้ม'); }
+      catch (e) { if (e.name !== 'AbortError') longPressHint(); }
+      return;
+    }
+    longPressHint(); return;
+  }
+  const href = URL.createObjectURL(qrFile);
+  const a = el('a', { href, download: qrFile.name, hidden: true });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 30000);
+  toast('บันทึกรูป QR แล้ว ดูได้ในแกลเลอรีหรือโฟลเดอร์ดาวน์โหลด');
 });
 document.addEventListener('visibilitychange', () => {
   // Back from the banking app: offer the next step right away.

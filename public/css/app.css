@@ -281,9 +281,15 @@ textarea { min-height: 76px; resize: vertical; }
 /* bank app buttons */
 .bank-apps-title { font-size: 16px; margin: 20px 0 10px; text-align: left; }
 .bank-apps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.bank-app { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 64px; padding: 8px 4px; border: 2px solid var(--black); border-radius: var(--radius-sm); background: var(--white); color: var(--black); text-decoration: none; line-height: 1.25; text-align: center; }
+.bank-app { display: flex; flex-direction: column; justify-content: flex-start; align-items: center; gap: 2px; min-height: 64px; padding: 10px 4px 8px; border: 2px solid var(--black); border-radius: var(--radius-sm); background: var(--white); color: var(--black); text-decoration: none; line-height: 1.25; text-align: center; }
 .bank-app b { font-size: 14px; overflow-wrap: anywhere; }
-.bank-app span { font-size: 12px; color: var(--ink-2); }
+.bank-app .bank-sub { font-size: 12px; color: var(--ink-2); }
+.bank-icon { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; margin-bottom: 4px; flex: none; }
+.bank-icon-text { display: grid; place-items: center; background: var(--black); color: var(--yellow); font-weight: 700; font-size: 15px; }
+.iab-box { margin: 0 0 16px; padding: 16px; border: 3px solid var(--black); border-radius: var(--radius); background: var(--yellow); color: var(--black); }
+.iab-box b { display: block; font-size: 17px; }
+.iab-box p { margin: 6px 0 12px; }
+.iab-box .btn { background: var(--black); color: var(--yellow); }
 .bank-app:active { background: var(--yellow); }
 .qr-card .hint { text-align: left; }
 

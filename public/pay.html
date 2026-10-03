@@ -22,6 +22,12 @@
   <p id="loading" class="notice">กำลังโหลดรายการ...</p>
   <section id="errorBox" class="notice error" role="alert" hidden></section>
 
+  <section id="iabBox" class="iab-box" hidden>
+    <b>เปิดหน้านี้ในเบราว์เซอร์ก่อนจ่ายเงิน</b>
+    <p id="iabText">หน้านี้เปิดอยู่ในแอปแชท ซึ่งบันทึกรูป QR และเปิดแอปธนาคารไม่ได้</p>
+    <a id="iabOpen" class="btn primary block" hidden>เปิดใน Chrome</a>
+  </section>
+
   <div id="content" hidden>
     <p id="statusBox" class="status-box" role="status"></p>
 
@@ -47,10 +53,10 @@
       <h2 id="qrTitle">สแกนจ่ายด้วยพร้อมเพย์</h2>
       <div class="qr-amount num" id="qrAmount"></div>
       <img id="qrImg" class="qr-img" width="328" height="328" alt="QR พร้อมเพย์สำหรับยอดนี้">
-      <a id="qrSave" class="btn primary block" download>1. บันทึกรูป QR</a>
+      <button type="button" id="qrSave" class="btn primary block">1. บันทึกรูป QR</button>
       <h3 class="bank-apps-title">2. เปิดแอปธนาคารของคุณ</h3>
       <div class="bank-apps" id="bankApps"></div>
-      <p class="hint">ในแอปเลือก "สแกน" แล้วเลือกรูป QR จากอัลบั้ม ยอดเงินจะขึ้นให้อัตโนมัติ<br>บันทึกรูปไม่ได้? กดค้างที่รูป QR แล้วเลือกบันทึกรูป<br>ถ้ากดปุ่มธนาคารแล้วไปหน้าร้านค้าแอป ให้กด "เปิด" ที่หน้านั้น</p>
+      <p class="hint">ในแอปธนาคารกด "สแกน" แล้วเลือกรูป QR จากอัลบั้ม ยอดเงินจะขึ้นให้เอง<br>บันทึกรูปไม่ได้? กดค้างที่รูป QR แล้วเลือกบันทึกรูป หรือแคปหน้าจอ<br>iPhone: กดปุ่มธนาคารแล้วจะไปหน้า App Store ให้กด "เปิด"</p>
     </section>
 
     <section id="bankCard" class="pay-card" hidden aria-labelledby="bankTitle">

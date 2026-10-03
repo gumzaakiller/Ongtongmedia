@@ -3,16 +3,34 @@
 // Opening a banking app with the amount filled in is not possible from a web page, so these
 // buttons only open the app (or its store page, which shows "Open" when it is installed).
 export const BANK_APPS = [
-  { id: 'kplus',    name: 'K PLUS',          bank: 'กสิกรไทย',   android: 'com.kasikorn.retail.mbanking.wap', ios: '361170631' },
-  { id: 'scb',      name: 'SCB EASY',        bank: 'ไทยพาณิชย์', android: 'com.scb.phone',                    ios: '568388474' },
-  { id: 'ktb',      name: 'Krungthai NEXT',  bank: 'กรุงไทย',    android: 'ktbcs.netbank',                    ios: '436753378' },
-  { id: 'paotang',  name: 'เป๋าตัง',          bank: 'กรุงไทย',    android: 'com.ktb.customer.qr',              ios: '1324902182' },
-  { id: 'bbl',      name: 'Bangkok Bank',    bank: 'กรุงเทพ',    android: 'com.bbl.mobilebanking',            ios: '660238716' },
-  { id: 'krungsri', name: 'krungsri',        bank: 'กรุงศรี',     android: 'com.krungsri.kma',                 ios: '571873195' },
-  { id: 'ttb',      name: 'ttb touch',       bank: 'ทีทีบี',      android: 'com.TMBTOUCH.PRODUCTION',          ios: '884079963' },
-  { id: 'mymo',     name: 'MyMo',            bank: 'ออมสิน',     androidSearch: 'MyMo GSB',                   ios: '987047466' },
-  { id: 'baac',     name: 'BAAC Mobile',     bank: 'ธ.ก.ส.',     androidSearch: 'BAAC Mobile',                ios: '1591473167' }
+  { id: 'kplus', icon: '/img/banks/kplus.webp',    name: 'K PLUS',          bank: 'กสิกรไทย',   android: 'com.kasikorn.retail.mbanking.wap', ios: '361170631' },
+  { id: 'scb', icon: '/img/banks/scb.webp',      name: 'SCB EASY',        bank: 'ไทยพาณิชย์', android: 'com.scb.phone',                    ios: '568388474' },
+  { id: 'ktb', icon: '/img/banks/ktb.webp',      name: 'Krungthai NEXT',  bank: 'กรุงไทย',    android: 'ktbcs.netbank',                    ios: '436753378' },
+  { id: 'paotang',  short: 'เป๋า',  name: 'เป๋าตัง',          bank: 'กรุงไทย',    android: 'com.ktb.customer.qr',              ios: '1324902182' },
+  { id: 'bbl', icon: '/img/banks/bbl.webp',      name: 'Bangkok Bank',    bank: 'กรุงเทพ',    android: 'com.bbl.mobilebanking',            ios: '660238716' },
+  { id: 'krungsri', short: 'ศรี', name: 'krungsri',        bank: 'กรุงศรี',     android: 'com.krungsri.kma',                 ios: '571873195' },
+  { id: 'ttb', icon: '/img/banks/ttb.webp',      name: 'ttb touch',       bank: 'ทีทีบี',      android: 'com.TMBTOUCH.PRODUCTION',          ios: '884079963' },
+  { id: 'mymo', icon: '/img/banks/mymo.webp',     name: 'MyMo',            bank: 'ออมสิน',     androidSearch: 'MyMo GSB',                   ios: '987047466' },
+  { id: 'baac', icon: '/img/banks/baac.webp',     name: 'BAAC Mobile',     bank: 'ธ.ก.ส.',     androidSearch: 'BAAC Mobile',                ios: '1591473167' }
 ];
+
+// In-app browsers (Messenger/Facebook/LINE) block downloads and app links, so the pay page
+// asks the customer to continue in their normal browser.
+export function inAppBrowser(ua = navigator.userAgent) {
+  if (/\bLine\//i.test(ua)) return 'line';
+  if (/FBAN|FBAV|FB_IAB|FBIOS|Messenger|Instagram/i.test(ua)) return 'facebook';
+  return null;
+}
+
+// A link that reopens the current page outside the in-app browser, or null when there is none (iPhone + Facebook).
+export function externalBrowserUrl(href, os, iab) {
+  const url = new URL(href);
+  if (iab === 'line') { url.searchParams.set('openExternalBrowser', '1'); return url.toString(); }
+  if (os === 'android') {
+    return `intent://${url.host}${url.pathname}${url.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url.toString())};end`;
+  }
+  return null;
+}
 
 export function platform(ua = navigator.userAgent) {
   if (/android/i.test(ua)) return 'android';
