@@ -1,8 +1,9 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "oongtong-media",
+  "name": "ongtongmedia",
   "main": "src/index.js",
   "compatibility_date": "2026-06-11",
+  "observability": { "enabled": true },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -16,10 +17,33 @@
   }],
   "r2_buckets": [{ "binding": "SLIPS", "bucket_name": "ongtongmedia-slips" }],
   "vars": {
+    "APP_ENV": "production",
     "SHOP_NAME": "อองตองมีเดีย",
     "PROMPTPAY_ID": "0882965924",
     "BANK_NAME": "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (ธ.ก.ส.)",
     "ACCOUNT_NAME": "อองตองมีเดีย โดย นางสาววิภาวรรณ ปราบสงบ",
-    "ACCOUNT_NO": "020253932875"
+    "ACCOUNT_NO": "020253932875",
+    "LINE_OA_ID": "@653ercqc"
+  },
+  "env": {
+    "staging": {
+      "observability": { "enabled": true },
+      "d1_databases": [{
+        "binding": "DB",
+        "database_name": "ongtongmedia-db-staging",
+        "database_id": "1232a4d0-0f13-4db9-b1db-9cdb77d903d7",
+        "migrations_dir": "migrations"
+      }],
+      "r2_buckets": [{ "binding": "SLIPS", "bucket_name": "ongtongmedia-slips-staging" }],
+      "vars": {
+        "APP_ENV": "staging",
+        "SHOP_NAME": "อองตองมีเดีย (ทดสอบ)",
+        "PROMPTPAY_ID": "0882965924",
+        "BANK_NAME": "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (ธ.ก.ส.)",
+        "ACCOUNT_NAME": "อองตองมีเดีย โดย นางสาววิภาวรรณ ปราบสงบ",
+        "ACCOUNT_NO": "020253932875",
+        "LINE_OA_ID": "@653ercqc"
+      }
+    }
   }
 }

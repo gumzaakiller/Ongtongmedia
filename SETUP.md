@@ -1,11 +1,20 @@
-﻿# ติดตั้งบน Cloudflare
+# ติดตั้งบน Cloudflare
 
 ## ทรัพยากรที่กำหนดไว้
-- Worker: `oongtong-media` (คงชื่อจากโปรเจกต์เดิม)
+- Worker: `ongtongmedia` (ผูกกับ GitHub ใน Cloudflare Workers Builds)
 - D1: `ongtongmedia-db`
 - Database ID: `cbd0c379-e34c-43eb-abfb-5175fdf1d431`
 - R2: `ongtongmedia-slips` — คง Public Access เป็น Disabled
 - Binding names: `DB`, `SLIPS`, `ASSETS`
+
+## Staging (ทดสอบ ไม่แตะข้อมูลจริง)
+- D1: `ongtongmedia-db-staging` (`1232a4d0-0f13-4db9-b1db-9cdb77d903d7`) — apply migration 0001+0002 แล้ว
+- R2: `ongtongmedia-slips-staging`
+- Worker: `ongtongmedia-staging` → `npx wrangler deploy --env staging`
+- migration: `npx wrangler d1 migrations apply DB --remote --env staging`
+
+> ⚠️ **ห้ามรัน migration `0002_payment_system.sql` บน production จนกว่า Worker เวอร์ชันใหม่จะพร้อม**
+> 0002 เปลี่ยนชื่อตาราง `orders` เดิมเป็น `legacy_orders` โค้ดหน้าเว็บปัจจุบันจะใช้งานไม่ได้ทันทีถ้ารันก่อน
 
 ## 1. ติดตั้งและทดสอบในเครื่อง
 ```sh
@@ -41,7 +50,7 @@ npx wrangler login
 ```sh
 npx wrangler secret put ADMIN_PASSWORD
 ```
-หาก Worker ยังไม่มี Wrangler อาจเสนอสร้าง Worker ให้ ตรวจชื่อ `oongtong-media` ก่อนยืนยัน
+หาก Worker ยังไม่มี Wrangler อาจเสนอสร้าง Worker ให้ ตรวจชื่อ `ongtongmedia` ก่อนยืนยัน
 การเปลี่ยนรหัสผ่านทำให้ session เดิมใช้งานไม่ได้
 
 ## 3. สร้างตารางและ deploy
