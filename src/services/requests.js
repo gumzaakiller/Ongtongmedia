@@ -181,4 +181,5 @@ export async function getRequestFile(env, fileId) {
   } });
 }
 
-export const publicCatalog = () => CATALOG.map(({ id, name, hint, size, options, fileNote = '' }) => ({ id, name, hint, size, options, fileNote }));
+export const publicCatalog = () => CATALOG.map(({ id, name, hint, size, options, fileNote = '', sizes = [] }) => ({ id, name, hint, size, options, fileNote,
+  sizes: sizes.map(([w, h, label]) => ({ width: w, height: h, label: `${label ? label + ' ' : ''}${w} × ${h} ซม.` })) }));

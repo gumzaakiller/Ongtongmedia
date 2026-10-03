@@ -10,6 +10,12 @@ function pick(cat) {
   selected = cat;
   for (const b of $('catGrid').children) b.setAttribute('aria-checked', String(b.dataset.id === cat.id));
   $('sizeFields').hidden = !cat.size;
+  // Standard sizes as a dropdown; "กำหนดขนาดเอง" shows the width/height fields.
+  const presets = cat.sizes || [];
+  $('presetWrap').hidden = !presets.length;
+  $('sizePreset').replaceChildren(...presets.map((p, i) => el('option', { value: String(i), text: p.label })), el('option', { value: 'custom', text: 'กำหนดขนาดเอง' }));
+  $('sizePreset').value = presets.length ? '0' : 'custom';
+  applyPreset();
   $('optionList').replaceChildren(...cat.options.map((o, i) => el('label', { class: 'check' },
     el('input', { type: 'checkbox', name: 'options', value: o, id: `opt${i}` }), ` ${o}`)));
   $('optionsWrap').hidden = !cat.options.length;
@@ -20,6 +26,14 @@ function pick(cat) {
   if (first) $('specCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
   sendKey = null;
 }
+
+function applyPreset() {
+  const v = $('sizePreset').value; const p = selected?.sizes?.[Number(v)];
+  $('customSize').hidden = !!p; $('sizeHint').hidden = !!p;
+  if (p) { $('width').value = p.width; $('height').value = p.height; $('unit').value = 'cm'; }
+  else if (selected?.sizes?.length) { $('width').value = ''; $('height').value = ''; }
+}
+$('sizePreset').addEventListener('change', applyPreset);
 
 function renderFiles() {
   $('fileList').replaceChildren(...files.map((f, i) => el('li', {},

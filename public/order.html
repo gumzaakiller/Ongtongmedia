@@ -26,13 +26,17 @@
     <section class="pay-card" id="specCard" hidden aria-labelledby="specTitle">
       <h2 id="specTitle">รายละเอียด</h2>
       <div id="sizeFields">
-        <div class="size-row">
+        <div id="presetWrap" hidden>
+          <label for="sizePreset">ขนาด</label>
+          <select id="sizePreset"></select>
+        </div>
+        <div class="size-row" id="customSize">
           <div><label for="width">กว้าง</label><input id="width" inputmode="decimal" autocomplete="off" placeholder="เช่น 200"></div>
           <span class="times" aria-hidden="true">×</span>
           <div><label for="height">สูง</label><input id="height" inputmode="decimal" autocomplete="off" placeholder="เช่น 100"></div>
           <div><label for="unit">หน่วย</label><select id="unit"><option value="cm">ซม.</option><option value="m">เมตร</option></select></div>
         </div>
-        <p class="hint">ไม่แน่ใจขนาด เว้นว่างไว้ได้ แล้วบอกในรายละเอียด</p>
+        <p class="hint" id="sizeHint">ไม่แน่ใจขนาด เว้นว่างไว้ได้ แล้วบอกในรายละเอียด</p>
       </div>
       <label for="qty">จำนวน</label>
       <input id="qty" inputmode="numeric" value="1" autocomplete="off">
