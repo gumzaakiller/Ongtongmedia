@@ -1,6 +1,7 @@
 import { AppError, json, readBody, readJson } from '../lib/http.js';
 import { MAX_SLIP_BYTES } from '../lib/image.js';
 import { addGalleryItem, deleteGalleryItem } from '../services/gallery.js';
+import { getDocSettings, saveDocSettings, issueDocument, getDocument } from '../services/documents.js';
 import { addExpense, deleteExpense, profitSummary, validateExpense } from '../services/accounts.js';
 import { login, logout, requireAdmin } from '../lib/auth.js';
 import { validateNewOrder, validateOrderEdit, text } from '../lib/validate.js';
@@ -101,6 +102,18 @@ export async function handleAdmin(request, env, path) {
       const reason = text(body?.reason, 'เหตุผล', 300, { required: true });
       return json({ order: await rejectPayment(env, id, { version: body.version, reason }, origin) });
     }
+  }
+
+  if (path === '/api/admin/doc-settings' && method === 'GET') return json({ settings: await getDocSettings(env) });
+  if (path === '/api/admin/doc-settings' && method === 'PUT') return json({ settings: await saveDocSettings(env, await readJson(request)) });
+  const dm = path.match(/^\/api\/admin\/documents\/(\d{1,9})$/);
+  if (dm && method === 'GET') return json({ document: await getDocument(env, Number(dm[1])) });
+  const odm = path.match(/^\/api\/admin\/orders\/([^/]+)\/documents$/);
+  if (odm && method === 'POST') {
+    const orderNo = decodeURIComponent(odm[1]);
+    if (!ORDER_NO_RE.test(orderNo)) throw new AppError('ไม่พบออเดอร์', 404);
+    const body = await readJson(request);
+    return json({ document: await issueDocument(env, orderNo, { type: body?.type, customer: body?.customer, date: body?.date }) }, 201);
   }
 
   if (path === '/api/admin/summary' && method === 'GET') {

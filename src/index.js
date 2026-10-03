@@ -1,7 +1,7 @@
 import { AppError, applySecurityHeaders, json, sameOrigin } from './lib/http.js';
 import { shopConfig } from './config.js';
 import { handleAdmin } from './routes/admin.js';
-import { handlePayApi, handlePayQr, handlePaySlip, handlePayNotify } from './routes/pay.js';
+import { handlePayApi, handlePayQr, handlePaySlip, handlePayNotify, handlePayReceipt } from './routes/pay.js';
 import { handleLineWebhook } from './services/line.js';
 import { handleTransferInfo, handleTransferQr, handleTransferSubmit } from './routes/transfer.js';
 import { handleGalleryList, galleryImage } from './services/gallery.js';
@@ -24,8 +24,9 @@ async function route(request, env) {
     const { shopName, lineOaId, facebookUrl, messengerUrl, appEnv } = shopConfig(env);
     return json({ shopName, lineOaId, facebookUrl, messengerUrl, env: appEnv });
   }
-  const pay = path.match(/^\/api\/pay\/([^/]+)(\/qr\.png|\/slip|\/notify)?$/);
+  const pay = path.match(/^\/api\/pay\/([^/]+)(\/qr\.png|\/slip|\/notify|\/receipt)?$/);
   if (pay && method === 'GET' && (!pay[2] || pay[2] === '/qr.png')) return pay[2] ? handlePayQr(request, env, pay[1]) : handlePayApi(request, env, pay[1]);
+  if (pay && method === 'GET' && pay[2] === '/receipt') return handlePayReceipt(request, env, pay[1]);
   if (pay && method === 'POST' && pay[2] === '/slip') return handlePaySlip(request, env, pay[1]);
   if (pay && method === 'POST' && pay[2] === '/notify') return handlePayNotify(request, env, pay[1]);
   if (path === '/api/transfer' && method === 'GET') return handleTransferInfo(env);
@@ -45,6 +46,7 @@ async function route(request, env) {
   // Customer pay page: one static page (public/pay.html) that reads the token from its own URL. (UI: Phase 5)
   // Fetch "/pay", not "/pay.html": static assets redirect *.html to the extensionless path, which would drop the token.
   if (/^\/pay\/[^/]+$/.test(path)) return env.ASSETS.fetch(new Request(new URL('/pay', url), { method, headers: request.headers }));
+  if (/^\/(doc\/\d{1,9}|receipt\/[^/]+)$/.test(path)) return env.ASSETS.fetch(new Request(new URL('/doc', url), { method, headers: request.headers }));
   if (/^\/request\/[^/]+$/.test(path)) return env.ASSETS.fetch(new Request(new URL('/request', url), { method, headers: request.headers }));
   return env.ASSETS.fetch(request); // "/admin" → public/admin.html (Phase 4)
 }

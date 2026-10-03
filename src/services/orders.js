@@ -96,13 +96,14 @@ function serializeItems(rows) {
 
 export async function getOrderDetail(env, orderNo, origin) {
   const db = env.DB;
-  const o = await db.prepare(`SELECT o.*, c.name AS customer_name, c.phone AS customer_phone, c.line_id AS customer_line_id
+  const o = await db.prepare(`SELECT o.*, c.name AS customer_name, c.phone AS customer_phone, c.line_id AS customer_line_id, c.address AS customer_address, c.tax_id AS customer_tax_id
     FROM orders o JOIN customers c ON c.id=o.customer_id WHERE o.order_no=?`).bind(orderNo).first();
   if (!o) throw new AppError('ไม่พบออเดอร์', 404);
-  const [items, payments, events] = await db.batch([
+  const [items, payments, events, docs] = await db.batch([
     db.prepare('SELECT * FROM order_items WHERE order_id=? ORDER BY position').bind(o.id),
     db.prepare('SELECT id,request_key,amount_satang,method,slip_key,slip_mime,slip_size,customer_note,status,reject_reason,submitted_at,reviewed_at FROM payments WHERE order_id=? ORDER BY id DESC').bind(o.id),
-    db.prepare('SELECT from_status,to_status,note,created_at FROM order_events WHERE order_id=? ORDER BY id').bind(o.id)
+    db.prepare('SELECT from_status,to_status,note,created_at FROM order_events WHERE order_id=? ORDER BY id').bind(o.id),
+    db.prepare('SELECT id,doc_type,year,seq,issued_date FROM documents WHERE order_id=? ORDER BY id').bind(o.id)
   ]);
   return {
     orderNo: o.order_no,
@@ -112,7 +113,8 @@ export async function getOrderDetail(env, orderNo, origin) {
     title: o.title,
     note: o.note,
     internalNote: o.internal_note,
-    customer: { id: o.customer_id, name: o.customer_name, phone: o.customer_phone, lineId: o.customer_line_id },
+    customer: { id: o.customer_id, name: o.customer_name, phone: o.customer_phone, lineId: o.customer_line_id, address: o.customer_address, taxId: o.customer_tax_id },
+    documents: docs.results.map(d => ({ id: d.id, type: d.doc_type, book: String(d.year).slice(-2), number: String(d.seq).padStart(4, '0'), issuedDate: d.issued_date })),
     items: serializeItems(items.results),
     subtotalSatang: o.subtotal_satang,
     discountSatang: o.discount_satang,

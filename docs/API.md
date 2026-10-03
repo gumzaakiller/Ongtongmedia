@@ -12,6 +12,7 @@
 | GET | `/api/pay/:token/qr.png` | รูป QR พร้อมเพย์ (PNG) ตามยอดใน D1 · เฉพาะสถานะ `pending` |
 | POST | `/api/pay/:token/slip` | ลูกค้าส่งสลิป: multipart `slip` (PNG/JPG/WEBP ≤ 8 MB ตรวจจากเนื้อไฟล์) + `note` · header `Idempotency-Key` · 10 ครั้ง/10 นาที/IP |
 | POST | `/api/pay/:token/notify` | ลูกค้าแจ้งโอนแล้วโดยไม่มีสลิป: JSON `{ note }` · header `Idempotency-Key` · ร้านต้องเช็คเงินเข้าแล้วยืนยันเอง |
+| GET | `/api/pay/:token/receipt` | ลูกค้าเปิดใบเสร็จของบิลที่ชำระแล้ว (หน้า `/receipt/:token`) |
 | GET | `/api/transfer` · `/api/transfer/qr.png?amount=` | หน้าโอนเงินไม่ต้องมีบิล: ข้อมูลบัญชี และ QR (ไม่ใส่ยอด = QR แบบใส่ยอดเองในแอป) |
 | POST | `/api/transfer` | multipart `slip,name,phone,amount,ref,note` + `Idempotency-Key` → สร้างบิล+สลิปรอตรวจ (ยอดที่ลูกค้ากรอก ร้านต้องตรวจกับสลิป) · 5 ครั้ง/10 นาที/IP |
 | GET | `/api/gallery` · `/api/gallery/:id/image` | ตัวอย่างผลงาน (รูปใน R2 prefix gallery/) |
@@ -40,6 +41,8 @@
 | POST | `/api/admin/payments/:id/verify` | `{ version }` ยืนยันสลิป → ชำระแล้ว + ลงรายรับ (วันที่รับเงิน = วันที่ลูกค้าส่งสลิป) |
 | POST | `/api/admin/payments/:id/reject` | `{ version, reason }` สลิปไม่ผ่าน → กลับเป็นรอชำระ ลูกค้าเห็นเหตุผล |
 | POST/DELETE | `/api/admin/gallery[/:id]` | เพิ่ม (multipart `image,category,title,caption`) / ลบรูปตัวอย่างงาน |
+| POST | `/api/admin/orders/:orderNo/documents` | ออก/แก้เอกสาร `{ type: invoice\|delivery\|receipt, customer?, date? }` เลขที่รันตามประเภท/ปี พ.ศ. ออกซ้ำได้เลขเดิม · ใบเสร็จต้องชำระแล้ว |
+| GET | `/api/admin/documents/:id` · `/api/admin/doc-settings` (PUT ได้) | เอกสาร (snapshot) และหัวเอกสารร้าน (เก็บใน settings ไม่อยู่ใน git) |
 | GET | `/api/admin/payments/:id/slip` | เปิดรูปสลิป (R2 private) |
 | GET | `/api/admin/requests?status=new\|quoted\|cancelled&cursor=` | รายการคำขอสั่งงาน |
 | GET | `/api/admin/requests/:requestNo` | รายละเอียด + ไฟล์ + ข้อมูลติดต่อ |

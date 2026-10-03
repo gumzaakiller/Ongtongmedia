@@ -7,6 +7,7 @@ import { rateLimit } from '../lib/ratelimit.js';
 import { promptPayPayload } from '../lib/promptpay.js';
 import { qrPng } from '../lib/qr.js';
 import { getPublicOrder } from '../services/orders.js';
+import { receiptForToken } from '../services/documents.js';
 import { shopConfig } from '../config.js';
 
 const NOT_FOUND = 'ไม่พบรายการชำระเงินนี้ กรุณาตรวจสอบลิงก์ หรือติดต่อร้าน';
@@ -74,4 +75,12 @@ export async function handlePayNotify(request, env, token) {
   const note = text(body?.note ?? '', 'ข้อความถึงร้าน', 300);
   const { replayed } = await notifyTransfer(env, token, { note, requestKey: key });
   return json({ ok: true, status: 'awaiting_verification' }, replayed ? 200 : 201);
+}
+
+// Customer downloads the receipt of a paid bill.
+export async function handlePayReceipt(request, env, token) {
+  await rateLimit(request, env, 'pay-view', 120, 600);
+  if (!TOKEN_RE.test(token)) throw new AppError(NOT_FOUND, 404);
+  const { id, ...document } = await receiptForToken(env, token);
+  return json({ document });
 }

@@ -1,0 +1,55 @@
+/* A4 business documents (receipt / delivery note / invoice), black on white like the shop's paper forms. */
+:root { --font: "Noto Sans Thai", "Sarabun", "TH Sarabun New", "Leelawadee UI", "Thonburi", system-ui, sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #E9E9E6; color: #000; font-family: var(--font); font-size: 14px; line-height: 1.55; }
+.toolbar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; background: #000; }
+.tb-btn { min-height: 44px; padding: 0 16px; border: 2px solid #FFD400; border-radius: 10px; background: #000; color: #FFD400; font: inherit; font-weight: 700; cursor: pointer; }
+.tb-btn.primary { background: #FFD400; color: #000; }
+.tb-hint { color: #E8E3C8; font-size: 13px; }
+.msg { max-width: 210mm; margin: 16px auto; padding: 12px 16px; background: #fff; border-left: 6px solid #000; }
+.msg.error { border-color: #B3261E; color: #B3261E; }
+.paper { width: 210mm; min-height: 297mm; margin: 16px auto; padding: 16mm 16mm 14mm; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.15); position: relative; }
+@media (max-width: 820px) {
+  .paper { width: auto; min-height: 0; margin: 12px; padding: 18px 14px; font-size: 13px; }
+  .head .logo { width: 84px; height: 84px; }
+}
+.head { display: flex; gap: 18px; align-items: center; }
+.head .logo { width: 34mm; height: 34mm; border-radius: 50%; object-fit: contain; flex: none; }
+.shop-name { font-weight: 700; font-size: 16px; }
+.pre { white-space: pre-line; }
+.doc-title { margin: 14px 0 0 0; font-size: 22px; text-align: center; letter-spacing: .02em; }
+.doc-meta { text-align: right; margin: 6px 0 16px; }
+.doc-meta u { text-decoration: underline dotted; text-underline-offset: 3px; padding: 0 4px; }
+.cust { display: grid; grid-template-columns: max-content 1fr; gap: 2px 8px; margin: 0 0 12px; }
+.cust dt { font-weight: 700; }
+.cust dd { margin: 0; }
+.lines { width: 100%; border-collapse: collapse; }
+.lines th, .lines td { border: 1px solid #000; padding: 5px 8px; vertical-align: top; }
+.lines thead th { font-weight: 700; text-align: center; background: #F2F2F2; }
+.lines tbody td { border-top: 0; border-bottom: 0; }
+.lines tbody tr.fill td { height: 26px; }
+.lines tbody tr:last-child td { border-bottom: 1px solid #000; }
+.c-no { width: 48px; text-align: center; } .c-qty { width: 64px; text-align: center; }
+.c-price { width: 104px; text-align: right; } .c-amt { width: 112px; text-align: right; }
+.lines td.c-no, .lines td.c-qty { text-align: center; }
+.lines td.c-price, .lines td.c-amt { text-align: right; font-variant-numeric: tabular-nums; }
+.lines tfoot td { font-weight: 700; }
+.lines tfoot .words { text-align: center; font-weight: 400; }
+.lines tfoot .words b { margin-left: 10px; }
+.notes { list-style: none; padding: 0; margin: 14px 0 0 24px; }
+.notes li::before { content: "* "; }
+.pay-info { margin: 12px 0 0 24px; padding: 8px 12px; border: 1px dashed #000; display: inline-block; }
+.signs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 48px; text-align: center; }
+.sign .line { white-space: nowrap; }
+.sign .who { margin-top: 4px; }
+.ref { position: absolute; left: 16mm; bottom: 10mm; font-size: 11px; color: #555; }
+@media (max-width: 820px) { .ref { position: static; margin-top: 24px; } }
+@page { size: A4; margin: 0; }
+@media print {
+  html, body { background: #fff; }
+  .no-print { display: none !important; }
+  .paper { margin: 0; box-shadow: none; width: 210mm; min-height: 297mm; padding: 16mm; font-size: 14px; }
+  .head .logo { width: 34mm; height: 34mm; }
+  .ref { position: absolute; }
+}
+[hidden] { display: none !important; }

@@ -34,6 +34,9 @@ function render(data) {
   }
   $('statusBox').textContent = msg; $('statusBox').hidden = !msg;
   $('statusBox').className = `status-box ${order.status}`;
+  const paid = ['paid', 'processing', 'completed'].includes(order.status);
+  $('receiptBtn').hidden = !paid;
+  if (paid) $('receiptBtn').href = `/receipt/${encodeURIComponent(token)}`;
 
   // ticket
   $('orderNo').textContent = order.orderNo;

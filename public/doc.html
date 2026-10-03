@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>เอกสาร | อองตองมีเดีย</title>
+  <link rel="icon" href="/shop-logo.png">
+  <link rel="stylesheet" href="/css/doc.css">
+  <script type="module" src="/js/doc.js"></script>
+</head>
+<body>
+<div class="toolbar no-print">
+  <button id="printBtn" class="tb-btn primary" type="button">พิมพ์ / บันทึก PDF</button>
+  <button id="backBtn" class="tb-btn" type="button">กลับ</button>
+  <span id="tbHint" class="tb-hint">ในหน้าต่างพิมพ์ เลือก "บันทึกเป็น PDF" เพื่อส่งให้ลูกค้าได้</span>
+</div>
+<p id="msg" class="msg no-print">กำลังโหลดเอกสาร...</p>
+<main id="paper" class="paper" hidden>
+  <header class="head">
+    <img src="/shop-logo.png" class="logo" alt="" width="150" height="150">
+    <div class="shop">
+      <div id="shopName" class="shop-name"></div>
+      <div id="shopAddress" class="pre"></div>
+      <div id="shopPhone"></div>
+      <div id="shopTax"></div>
+    </div>
+  </header>
+  <h1 id="docTitle" class="doc-title"></h1>
+  <div class="doc-meta">
+    <div>เล่มที่ <u id="docBook"></u> เลขที่ <u id="docNo"></u></div>
+    <div>วันที่ <u id="docDate"></u></div>
+  </div>
+  <dl class="cust">
+    <dt>นามลูกค้า :</dt><dd id="cName"></dd>
+    <dt>ที่อยู่ :</dt><dd id="cAddress" class="pre"></dd>
+    <dt>เบอร์โทร :</dt><dd id="cPhone"></dd>
+    <dt id="cTaxLabel">เลขผู้เสียภาษี :</dt><dd id="cTax"></dd>
+  </dl>
+  <table class="lines">
+    <thead><tr><th class="c-no">ลำดับ</th><th>รายการ</th><th class="c-qty">จำนวน</th><th class="c-price">ราคาต่อหน่วย</th><th class="c-amt">จำนวนเงิน</th></tr></thead>
+    <tbody id="lines"></tbody>
+    <tfoot id="foot"></tfoot>
+  </table>
+  <ul id="notes" class="notes"></ul>
+  <div id="payInfo" class="pay-info" hidden></div>
+  <div id="signs" class="signs"></div>
+  <div class="ref">อ้างอิงบิล <span id="orderNo"></span></div>
+</main>
+</body>
+</html>

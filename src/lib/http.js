@@ -43,6 +43,6 @@ export function applySecurityHeaders(response, path) {
   h.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
   // Gallery photos never change for a given id, so they may be cached; every other API answer may not.
   if (path.startsWith('/api/') && !/^\/api\/gallery\/\d+\/image$/.test(path)) h.set('Cache-Control', 'no-store');
-  if (path.startsWith('/pay/') || path.startsWith('/api/pay/') || path.startsWith('/request/') || path.startsWith('/api/requests/')) { h.set('X-Robots-Tag', 'noindex, nofollow'); h.set('Cache-Control', 'no-store'); }
+  if (path.startsWith('/pay/') || path.startsWith('/api/pay/') || path.startsWith('/request/') || path.startsWith('/api/requests/') || path.startsWith('/receipt/') || path.startsWith('/doc/')) { h.set('X-Robots-Tag', 'noindex, nofollow'); h.set('Cache-Control', 'no-store'); }
   return result;
 }

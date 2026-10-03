@@ -265,6 +265,7 @@ function renderTicket(o) {
   $('tkNoteWrap').hidden = !o.note; $('tkNote').textContent = o.note;
   $('tkInternalWrap').hidden = !o.internalNote; $('tkInternal').textContent = o.internalNote;
   renderPayments(o);
+  renderDocs(o);
   show($('ticketError'), '');
   $('tkActions').replaceChildren(...(ACTIONS[o.status] || []).map(([to, label, kind, confirmText]) =>
     el('button', { class: `btn block ${kind}`, type: 'button', text: label, onclick: e => changeStatus(o, to, confirmText, e.currentTarget) })));
@@ -750,4 +751,65 @@ $('expForm').addEventListener('submit', async e => {
     loadAcct();
   } catch (err) { show($('eError'), err.message); }
   finally { eSending = false; $('eSubmit').disabled = false; }
+});
+
+/* ---------------- documents: invoice / delivery note / receipt ---------------- */
+const DOC_NAME = { invoice: 'ใบแจ้งหนี้', delivery: 'ใบส่งของ', receipt: 'ใบเสร็จรับเงิน' };
+let docType = null, docSending = false, docSettingsLoaded = false;
+function renderDocs(o) {
+  $('docWrap').hidden = o.status === 'cancelled';
+  const paid = ['paid', 'processing', 'completed'].includes(o.status);
+  for (const b of document.querySelectorAll('[data-doc]')) {
+    const has = o.documents?.some(d => d.type === b.dataset.doc);
+    b.disabled = b.dataset.doc === 'receipt' && !paid;
+    b.title = b.disabled ? 'ออกได้หลังยืนยันการชำระเงิน' : '';
+    b.textContent = `${has ? 'แก้/เปิด' : 'ออก'}${DOC_NAME[b.dataset.doc]}`;
+  }
+  $('docList').replaceChildren(...(o.documents || []).map(d => el('li', {},
+    el('span', { text: `${DOC_NAME[d.type]} เล่มที่ ${d.book}/${d.number} · ${thaiDate(d.issuedDate)}` }),
+    el('a', { class: 'btn small-btn', href: `/doc/${d.id}`, target: '_blank', rel: 'noopener', text: 'เปิด / พิมพ์' }))));
+  $('docForm').hidden = true;
+}
+for (const b of document.querySelectorAll('[data-doc]')) b.addEventListener('click', () => {
+  const o = state.current; if (!o) return;
+  docType = b.dataset.doc;
+  const existing = o.documents?.find(d => d.type === docType);
+  $('docFormTitle').textContent = existing ? `${DOC_NAME[docType]} เล่มที่ ${existing.book}/${existing.number}` : `ออก${DOC_NAME[docType]}ใหม่`;
+  $('docSubmit').textContent = existing ? 'บันทึกและเปิดเอกสาร' : 'ออกเอกสาร';
+  $('dName').value = o.customer.name || ''; $('dAddress').value = o.customer.address || '';
+  $('dPhone').value = o.customer.phone || ''; $('dTax').value = o.customer.taxId || '';
+  $('dDate').max = todayYmd();
+  $('dDate').value = existing ? existing.issuedDate : docType === 'receipt' && o.paidAt ? new Date(o.paidAt).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' }) : todayYmd();
+  show($('docError'), ''); $('docForm').hidden = false; $('dName').focus();
+});
+$('docCancel').addEventListener('click', () => { $('docForm').hidden = true; });
+$('docForm').addEventListener('submit', async e => {
+  e.preventDefault(); if (docSending || !docType) return;
+  const o = state.current;
+  docSending = true; $('docSubmit').disabled = true; show($('docError'), '');
+  try {
+    const { document: d } = await api(`/api/admin/orders/${encodeURIComponent(o.orderNo)}/documents`, { method: 'POST', body: {
+      type: docType, date: $('dDate').value,
+      customer: { name: $('dName').value, address: $('dAddress').value, phone: $('dPhone').value, taxId: $('dTax').value }
+    } });
+    toast(`${DOC_NAME[docType]} เล่มที่ ${d.book}/${d.number} พร้อมแล้ว`);
+    await openOrder(o.orderNo);
+    if (!docSettingsLoaded || !$('sAddress').value) $('docSettingsBox').open = !$('sAddress').value;
+  } catch (err) { show($('docError'), err.message); }
+  finally { docSending = false; $('docSubmit').disabled = false; }
+});
+$('docSettingsBox').addEventListener('toggle', async () => {
+  if (!$('docSettingsBox').open || docSettingsLoaded) return;
+  try {
+    const { settings: s } = await api('/api/admin/doc-settings');
+    $('sAddress').value = s.address; $('sPhone').value = s.phone; $('sTax').value = s.taxId; $('sSigner').value = s.signer;
+    docSettingsLoaded = true;
+  } catch (err) { show($('sError'), err.message); }
+});
+$('sSave').addEventListener('click', async () => {
+  show($('sError'), '');
+  try {
+    await api('/api/admin/doc-settings', { method: 'PUT', body: { address: $('sAddress').value, phone: $('sPhone').value, taxId: $('sTax').value, signer: $('sSigner').value } });
+    toast('บันทึกหัวเอกสารแล้ว เอกสารที่ออกใหม่หรือกดแก้จะใช้ข้อมูลนี้');
+  } catch (err) { show($('sError'), err.message); }
 });

@@ -320,6 +320,43 @@
             </details>
           </div>
 
+          <div id="docWrap" class="doc-box">
+            <h3>เอกสาร</h3>
+            <div class="doc-btns">
+              <button class="btn" type="button" data-doc="invoice">ใบแจ้งหนี้</button>
+              <button class="btn" type="button" data-doc="delivery">ใบส่งของ</button>
+              <button class="btn" type="button" data-doc="receipt">ใบเสร็จรับเงิน</button>
+            </div>
+            <ul class="doc-list" id="docList"></ul>
+            <form id="docForm" class="doc-form" hidden novalidate>
+              <b id="docFormTitle"></b>
+              <p class="hint">ข้อมูลลูกค้าบนเอกสาร (บันทึกไว้ใช้ครั้งต่อไปด้วย)</p>
+              <label for="dName">นามลูกค้า</label><input id="dName" maxlength="200">
+              <label for="dAddress">ที่อยู่</label><textarea id="dAddress" maxlength="300" rows="2" placeholder="เช่น หมู่ที่ 12 ตำบลเตาปูน อำเภอสอง จังหวัดแพร่ 54120"></textarea>
+              <div class="row2">
+                <div><label for="dPhone">เบอร์โทร</label><input id="dPhone" maxlength="30" type="tel"></div>
+                <div><label for="dTax">เลขผู้เสียภาษีลูกค้า (ถ้ามี)</label><input id="dTax" maxlength="17" inputmode="numeric"></div>
+              </div>
+              <label for="dDate">วันที่ในเอกสาร</label><input id="dDate" type="date">
+              <p id="docError" class="notice error" role="alert" hidden></p>
+              <div class="row2 mt-16">
+                <button id="docSubmit" class="btn primary" type="submit">ออกเอกสาร</button>
+                <button id="docCancel" class="btn ghost" type="button">ยกเลิก</button>
+              </div>
+            </form>
+            <details class="manual" id="docSettingsBox">
+              <summary>ตั้งค่าหัวเอกสาร (ที่อยู่ร้าน / ผู้ลงนาม)</summary>
+              <label for="sAddress">ที่อยู่ร้าน</label><textarea id="sAddress" rows="2" maxlength="300"></textarea>
+              <div class="row2">
+                <div><label for="sPhone">เบอร์โทรร้าน</label><input id="sPhone" maxlength="100"></div>
+                <div><label for="sTax">เลขประจำตัวผู้เสียภาษีอากร</label><input id="sTax" maxlength="17" inputmode="numeric"></div>
+              </div>
+              <label for="sSigner">ชื่อผู้ลงนาม (ผู้รับเงิน / ผู้ส่งของ)</label><input id="sSigner" maxlength="120">
+              <p id="sError" class="notice error" role="alert" hidden></p>
+              <button id="sSave" class="btn primary block mt-16" type="button">บันทึกหัวเอกสาร</button>
+            </details>
+          </div>
+
           <div class="share" id="shareBox">
             <label for="tkLink">ลิงก์ชำระเงินของลูกค้า</label>
             <input id="tkLink" readonly>
