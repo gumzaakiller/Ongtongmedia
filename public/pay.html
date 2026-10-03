@@ -63,10 +63,26 @@
       <p class="hint">กรุณาโอนให้ตรงยอด <b id="exactAmount" class="num"></b></p>
     </section>
 
+    <section id="uploadCard" class="pay-card" hidden aria-labelledby="uploadTitle">
+      <h2 id="uploadTitle">ชำระแล้ว ส่งสลิปให้ร้าน</h2>
+      <form id="slipForm" novalidate>
+        <label class="file-pick" id="filePick">
+          <span id="fileLabel">แตะเพื่อเลือกรูปสลิป</span>
+          <input id="slipFile" type="file" accept="image/png,image/jpeg,image/webp">
+        </label>
+        <img id="slipPreview" class="upload-preview" alt="ตัวอย่างสลิปที่เลือก" hidden>
+        <p class="hint">รูป PNG, JPG หรือ WEBP ขนาดไม่เกิน 8 MB</p>
+        <label for="slipNote">ข้อความถึงร้าน (ไม่บังคับ)</label>
+        <input id="slipNote" maxlength="300" placeholder="เช่น โอนจากบัญชีคุณแม่">
+        <p id="slipError" class="notice error" role="alert" hidden></p>
+        <button id="slipSubmit" class="btn primary block mt-16" type="submit">ส่งสลิป</button>
+      </form>
+    </section>
+
     <section class="pay-card" aria-labelledby="notifyTitle">
-      <h2 id="notifyTitle">ชำระแล้ว แจ้งร้านได้ที่นี่</h2>
+      <h2 id="notifyTitle">หรือแจ้งทาง LINE</h2>
       <p class="hint" id="notifyHint">กดปุ่มด้านล่าง ระบบจะพิมพ์เลขที่รายการให้ แล้วแนบรูปสลิปในแชท LINE ของร้าน</p>
-      <a id="lineBtn" class="btn primary block" rel="noopener">แจ้งชำระผ่าน LINE</a>
+      <a id="lineBtn" class="btn block" rel="noopener">แจ้งชำระผ่าน LINE</a>
       <p class="small muted center" id="lineId"></p>
     </section>
 

@@ -36,8 +36,68 @@
     <span class="spacer"></span>
     <button id="logoutBtn" class="btn on-dark" type="button">ออกจากระบบ</button>
   </header>
+  <nav class="tabs-nav" aria-label="เมนูผู้ดูแล">
+    <button class="tab-btn" type="button" data-view="dash" aria-pressed="false">ภาพรวม</button>
+    <button class="tab-btn" type="button" data-view="orders" aria-pressed="true">รายการ</button>
+    <button class="tab-btn" type="button" data-view="income" aria-pressed="false">รายรับ</button>
+  </nav>
 
-  <main class="workspace">
+  <!-- Dashboard -->
+  <section id="dashView" class="view-wrap" hidden aria-labelledby="dashTitle">
+    <article class="ticket day-ticket">
+      <div class="ticket-head">
+        <div class="title" id="dashTitle">รับเงินวันนี้</div>
+        <div class="big num" id="dReceived">฿0.00</div>
+        <div class="small" id="dReceivedSub"></div>
+      </div>
+      <div class="perf" aria-hidden="true"></div>
+      <div class="ticket-body">
+        <dl class="figures num">
+          <dt>รายรับเดือนนี้</dt><dd id="dMonth"></dd>
+          <dt>ออกบิลวันนี้</dt><dd id="dCreated"></dd>
+          <dt>ยังไม่ชำระ</dt><dd id="dUnpaid"></dd>
+          <dt>กำลังทำงาน (ชำระแล้ว)</dt><dd id="dInProgress"></dd>
+        </dl>
+        <h3>รายรับ 7 วันล่าสุด</h3>
+        <div class="bars" id="dBars" aria-label="กราฟรายรับ 7 วันล่าสุด"></div>
+      </div>
+    </article>
+    <section class="panel" aria-labelledby="awaitTitle">
+      <h2 id="awaitTitle">รอตรวจสลิป <span class="count-pill" id="dAwaitCount">0</span></h2>
+      <p class="muted small" id="dAwaitSum"></p>
+      <ul class="orders flat-list" id="dAwaitList"></ul>
+    </section>
+    <p id="dashError" class="notice error" role="alert" hidden></p>
+  </section>
+
+  <!-- Income -->
+  <section id="incomeView" class="view-wrap wide" hidden aria-labelledby="incomeTitle">
+    <div class="list-head"><h1 id="incomeTitle">รายรับ</h1></div>
+    <form id="incomeFilter" class="panel filters" novalidate>
+      <div class="filter-grid">
+        <div><label for="fMonth">เดือน</label><input id="fMonth" type="month"></div>
+        <div><label for="fFrom">ตั้งแต่วันที่</label><input id="fFrom" type="date"></div>
+        <div><label for="fTo">ถึงวันที่</label><input id="fTo" type="date"></div>
+        <div><label for="fQ">ลูกค้า หรือเลขออเดอร์</label><input id="fQ" type="search" maxlength="50" autocomplete="off"></div>
+      </div>
+      <div class="filter-actions">
+        <button class="btn primary" type="submit">ค้นหา</button>
+        <button class="btn ghost" type="button" id="fClear">ล้างตัวกรอง</button>
+        <a class="btn" id="csvLink" href="/api/admin/income.csv" download>ดาวน์โหลด Excel (CSV)</a>
+      </div>
+    </form>
+    <div class="income-sum num" id="incomeSum" aria-live="polite"></div>
+    <p id="incomeError" class="notice error" role="alert" hidden></p>
+    <div class="table-wrap">
+      <table class="income-table num">
+        <thead><tr><th>วันที่รับเงิน</th><th>เลขออเดอร์</th><th>ลูกค้า</th><th>ช่องทาง</th><th class="r">จำนวนเงิน</th></tr></thead>
+        <tbody id="incomeRows"></tbody>
+      </table>
+    </div>
+    <button id="incomeMore" class="btn block more" type="button" hidden>แสดงเพิ่ม</button>
+  </section>
+
+  <main class="workspace" id="ordersView">
     <!-- Orders list -->
     <section aria-labelledby="listTitle">
       <div class="list-head">
@@ -125,6 +185,26 @@
             <div><span>รวม</span><span id="tkSub"></span></div>
             <div id="tkDiscRow"><span>ส่วนลด</span><span id="tkDisc"></span></div>
             <div class="grand"><span>ยอดชำระ</span><span id="tkTotal"></span></div>
+          </div>
+
+          <div id="tkPayWrap" hidden>
+            <h3>การชำระเงิน</h3>
+            <div id="tkPayments"></div>
+            <details id="manualBox" class="manual" hidden>
+              <summary>บันทึกว่าได้รับเงินแล้ว (สลิปทาง LINE / เงินสด)</summary>
+              <div class="row2">
+                <div><label for="mMethod">ช่องทาง</label>
+                  <select id="mMethod">
+                    <option value="bank_transfer">โอนเข้าบัญชี</option>
+                    <option value="promptpay">พร้อมเพย์</option>
+                    <option value="cash">เงินสด</option>
+                    <option value="other">อื่นๆ</option>
+                  </select></div>
+                <div><label for="mDate">วันที่รับเงิน</label><input id="mDate" type="date"></div>
+              </div>
+              <label for="mNote">หมายเหตุ</label><input id="mNote" maxlength="300" placeholder="เช่น ตรวจสลิปใน LINE แล้ว">
+              <button id="mSubmit" class="btn primary block mt-16" type="button">ยืนยันรับเงินและลงรายรับ</button>
+            </details>
           </div>
 
           <div class="share" id="shareBox">

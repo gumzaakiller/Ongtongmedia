@@ -61,9 +61,12 @@ function render(data) {
     $('exactAmount').textContent = baht(order.totalSatang);
   }
 
+  // slip upload (only while the bill is open)
+  $('uploadCard').hidden = !data.canSubmitSlip;
+
   // LINE
   const canNotify = order.status === 'pending';
-  $('notifyTitle').textContent = canNotify ? 'ชำระแล้ว แจ้งร้านได้ที่นี่' : 'ติดต่อร้าน';
+  $('notifyTitle').textContent = canNotify ? (data.canSubmitSlip ? 'หรือแจ้งทาง LINE' : 'แจ้งชำระทาง LINE') : 'ติดต่อร้าน';
   $('notifyHint').hidden = !canNotify;
   $('lineBtn').textContent = canNotify ? 'แจ้งชำระผ่าน LINE' : 'ติดต่อร้านทาง LINE';
   if (shop.lineOaId) { $('lineBtn').href = lineUrl(shop.lineOaId, data); $('lineId').textContent = `LINE ${shop.lineOaId}`; }
@@ -76,6 +79,40 @@ $('copyAccount').addEventListener('click', async () => toast(await copyText($('a
 $('copyPromptPay').addEventListener('click', async () => toast(await copyText($('promptPayId').textContent) ? 'คัดลอกเลขพร้อมเพย์แล้ว' : 'คัดลอกไม่สำเร็จ'));
 $('qrImg').addEventListener('error', () => { $('qrImg').hidden = true; toast('โหลดรูป QR ไม่สำเร็จ ใช้การโอนเข้าบัญชีแทนได้'); });
 
-api('/api/pay/' + encodeURIComponent(token))
+// ---- slip upload ----
+const MAX_SLIP = 8 * 1024 * 1024;
+let slipKey = null, sending = false;
+$('slipFile').addEventListener('change', () => {
+  const f = $('slipFile').files[0]; show($('slipError'), ''); slipKey = null;
+  if (!f) { $('slipPreview').hidden = true; $('fileLabel').textContent = 'แตะเพื่อเลือกรูปสลิป'; return; }
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type)) show($('slipError'), 'กรุณาเลือกไฟล์รูปภาพ PNG, JPG หรือ WEBP');
+  else if (f.size > MAX_SLIP) show($('slipError'), 'รูปมีขนาดเกิน 8 MB กรุณาเลือกรูปที่เล็กลง หรือแคปหน้าจอสลิปใหม่');
+  $('fileLabel').textContent = `เลือกแล้ว: ${f.name}  (แตะเพื่อเปลี่ยน)`;
+  if ($('slipPreview').src) URL.revokeObjectURL($('slipPreview').src);
+  $('slipPreview').src = URL.createObjectURL(f); $('slipPreview').hidden = false;
+});
+$('slipForm').addEventListener('submit', async e => {
+  e.preventDefault(); if (sending) return;
+  const f = $('slipFile').files[0];
+  if (!f) { show($('slipError'), 'กรุณาเลือกรูปสลิปก่อน'); return; }
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) || f.size > MAX_SLIP) return;
+  // Keep the same key until success so a retry after a network drop cannot create a duplicate.
+  slipKey ||= crypto.randomUUID();
+  const form = new FormData(); form.set('slip', f); form.set('note', $('slipNote').value);
+  sending = true; $('slipSubmit').disabled = true; $('slipSubmit').textContent = 'กำลังส่ง...'; show($('slipError'), '');
+  try {
+    const res = await fetch(`/api/pay/${encodeURIComponent(token)}/slip`, { method: 'POST', body: form, headers: { 'Idempotency-Key': slipKey } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { const err = new Error(data.error || 'ส่งสลิปไม่สำเร็จ ลองอีกครั้ง'); err.status = res.status; throw err; }
+    slipKey = null; toast('ส่งสลิปเรียบร้อย ร้านจะตรวจสอบและแจ้งผล');
+    await load(); scrollTo(0, 0);
+  } catch (err) {
+    if (err.status && err.status < 500 && err.status !== 429) slipKey = null;
+    show($('slipError'), err.status ? err.message : 'เชื่อมต่อไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วกด "ส่งสลิป" อีกครั้ง (ไม่ส่งซ้ำ)');
+  } finally { sending = false; $('slipSubmit').disabled = false; $('slipSubmit').textContent = 'ส่งสลิป'; }
+});
+
+const load = () => api('/api/pay/' + encodeURIComponent(token))
   .then(render)
-  .catch(e => { $('loading').hidden = true; show($('errorBox'), e.message); });
+  .catch(e => { $('loading').hidden = true; $('content').hidden = true; show($('errorBox'), e.message); });
+load();

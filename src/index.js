@@ -1,7 +1,7 @@
 import { AppError, applySecurityHeaders, json, sameOrigin } from './lib/http.js';
 import { shopConfig } from './config.js';
 import { handleAdmin } from './routes/admin.js';
-import { handlePayApi, handlePayQr } from './routes/pay.js';
+import { handlePayApi, handlePayQr, handlePaySlip } from './routes/pay.js';
 
 async function route(request, env) {
   const url = new URL(request.url);
@@ -18,8 +18,9 @@ async function route(request, env) {
     const { shopName, lineOaId, appEnv } = shopConfig(env);
     return json({ shopName, lineOaId, env: appEnv });
   }
-  const pay = path.match(/^\/api\/pay\/([^/]+)(\/qr\.png)?$/);
-  if (pay && method === 'GET') return pay[2] ? handlePayQr(request, env, pay[1]) : handlePayApi(request, env, pay[1]);
+  const pay = path.match(/^\/api\/pay\/([^/]+)(\/qr\.png|\/slip)?$/);
+  if (pay && method === 'GET' && pay[2] !== '/slip') return pay[2] ? handlePayQr(request, env, pay[1]) : handlePayApi(request, env, pay[1]);
+  if (pay && method === 'POST' && pay[2] === '/slip') return handlePaySlip(request, env, pay[1]);
   if (path.startsWith('/api/admin/')) return handleAdmin(request, env, path);
   if (path.startsWith('/api/')) throw new AppError('ไม่พบ API หรือวิธีเรียกไม่ถูกต้อง', 404);
 

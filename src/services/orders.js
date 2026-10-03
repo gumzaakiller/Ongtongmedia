@@ -19,10 +19,10 @@ export const MANUAL_TRANSITIONS = {
 // A batch statement that aborts the whole D1 batch (transaction) unless the condition holds.
 // json_extract('{') raises "malformed JSON", rolling back every statement in the batch.
 const GUARD_FAIL = 'malformed JSON';
-function guard(db, conditionSql, ...params) {
+export function guard(db, conditionSql, ...params) {
   return db.prepare(`SELECT CASE WHEN (${conditionSql}) THEN 1 ELSE json_extract('{', '$') END AS ok`).bind(...params);
 }
-const isGuardFailure = e => String(e?.message || e).includes(GUARD_FAIL);
+export const isGuardFailure = e => String(e?.message || e).includes(GUARD_FAIL);
 
 // Turn DB-enforced rule violations (triggers in 0002) into user-facing errors.
 export function mapDbError(e) {

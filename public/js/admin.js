@@ -8,7 +8,11 @@ const ACTIONS = {
   processing: [['completed', 'งานเสร็จแล้ว', 'primary']]
 };
 
-const state = { status: '', q: '', cursor: null, current: null, customer: null, createKey: null, busy: false };
+const state = { view: null, status: '', q: '', cursor: null, current: null, customer: null, createKey: null, busy: false, incomeCursor: null };
+const METHOD_LABEL = { promptpay: 'พร้อมเพย์', bank_transfer: 'โอนเข้าบัญชี', cash: 'เงินสด', other: 'อื่นๆ' };
+const PAY_LABEL = { submitted: 'รอตรวจ', verified: 'ยืนยันแล้ว', rejected: 'ไม่ผ่าน' };
+const todayYmd = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+const thaiDate = ymd => new Date(ymd + 'T00:00:00+07:00').toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: '2-digit' });
 const isDesktop = () => matchMedia('(min-width: 960px)').matches;
 
 /* ---------------- session ---------------- */
@@ -20,9 +24,24 @@ function showLogin() { $('appView').hidden = true; $('loginView').hidden = false
 async function showApp() {
   $('loginView').hidden = true; $('appView').hidden = false;
   api('/api/config').then(c => { $('envFlag').hidden = c.env === 'production'; }).catch(() => {});
+  await setView(state.view || 'dash');
+}
+
+/* ---------------- views ---------------- */
+const VIEWS = { dash: 'dashView', orders: 'ordersView', income: 'incomeView' };
+async function setView(name) {
+  state.view = name;
+  for (const [v, id] of Object.entries(VIEWS)) $(id).hidden = v !== name;
+  for (const b of document.querySelectorAll('.tab-btn')) b.setAttribute('aria-pressed', String(b.dataset.view === name));
+  if (name !== 'orders') { $('side').classList.remove('detail-open'); document.body.style.overflow = ''; }
+  scrollTo(0, 0);
+  if (name === 'dash') return loadDashboard();
+  if (name === 'income') return loadIncome();
   await loadOrders();
   if (isDesktop() && !state.current) openCreate();
 }
+for (const b of document.querySelectorAll('.tab-btn')) b.addEventListener('click', () => setView(b.dataset.view));
+async function goToOrder(orderNo) { state.view = 'orders'; await setView('orders'); await openOrder(orderNo); }
 
 $('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
@@ -236,6 +255,7 @@ function renderTicket(o) {
   $('tkLink').value = o.payUrl; $('openLink').href = o.payUrl;
   $('tkNoteWrap').hidden = !o.note; $('tkNote').textContent = o.note;
   $('tkInternalWrap').hidden = !o.internalNote; $('tkInternal').textContent = o.internalNote;
+  renderPayments(o);
   show($('ticketError'), '');
   $('tkActions').replaceChildren(...(ACTIONS[o.status] || []).map(([to, label, kind, confirmText]) =>
     el('button', { class: `btn block ${kind}`, type: 'button', text: label, onclick: e => changeStatus(o, to, confirmText, e.currentTarget) })));
@@ -260,6 +280,133 @@ async function changeStatus(o, to, confirmText, btn) {
 $('copyLink').addEventListener('click', async () => { toast(await copyText(state.current.payUrl) ? 'คัดลอกลิงก์แล้ว' : 'คัดลอกไม่สำเร็จ กดค้างที่ลิงก์เพื่อคัดลอกเอง'); });
 $('copyMessage').addEventListener('click', async () => { toast(await copyText(shareMessage(state.current)) ? 'คัดลอกข้อความแล้ว วางในแชท LINE ได้เลย' : 'คัดลอกไม่สำเร็จ'); });
 $('tkLink').addEventListener('focus', e => e.target.select());
+
+/* ---------------- payments (ticket) ---------------- */
+function renderPayments(o) {
+  $('tkPayWrap').hidden = !o.payments.length && o.status !== 'pending';
+  $('tkPayments').replaceChildren(...o.payments.map(p => el('div', { class: `pay-item ${p.status}` },
+    el('div', { class: 'row' },
+      el('b', { class: 'num', text: `${baht(p.amountSatang)}  ${METHOD_LABEL[p.method] || p.method}` }),
+      el('span', { class: `badge ${p.status}`, text: PAY_LABEL[p.status] })),
+    el('div', { class: 'small muted', text: `${p.hasSlip ? 'ลูกค้าส่งสลิป' : 'บันทึกโดยร้าน'} ${thaiDateTime(p.submittedAt)}` }),
+    p.customerNote ? el('div', { class: 'small', text: `ข้อความ: ${p.customerNote}` }) : null,
+    p.rejectReason ? el('div', { class: 'small', text: `เหตุผลที่ไม่ผ่าน: ${p.rejectReason}` }) : null,
+    p.hasSlip ? el('a', { class: 'slip', href: `/api/admin/payments/${p.id}/slip`, target: '_blank', rel: 'noopener', title: 'เปิดสลิปขนาดเต็ม' },
+      el('img', { src: `/api/admin/payments/${p.id}/slip`, alt: `สลิปการชำระของ ${o.orderNo}`, loading: 'lazy' })) : null,
+    p.status === 'submitted' ? el('div', { class: 'acts' },
+      el('button', { class: 'btn primary', type: 'button', text: 'ยืนยันการชำระเงิน', onclick: e => reviewPayment(o, p, 'verify', e.currentTarget) }),
+      el('button', { class: 'btn danger', type: 'button', text: 'สลิปไม่ผ่าน', onclick: e => reviewPayment(o, p, 'reject', e.currentTarget) })) : null
+  )));
+  $('manualBox').hidden = o.status !== 'pending';
+  $('manualBox').open = false;
+  $('mDate').value = todayYmd(); $('mDate').max = todayYmd(); $('mNote').value = '';
+}
+
+async function reviewPayment(o, p, action, btn) {
+  let body = { version: o.version };
+  if (action === 'verify') {
+    if (!confirm(`ตรวจแล้วว่ามีเงินเข้าบัญชี ${baht(p.amountSatang)} จริง?\nเมื่อยืนยัน ระบบจะลงรายรับให้อัตโนมัติ`)) return;
+  } else {
+    const reason = prompt('เหตุผลที่สลิปไม่ผ่าน (ลูกค้าจะเห็นข้อความนี้)', 'ยอดในสลิปไม่ตรงกับยอดที่ต้องชำระ');
+    if (reason === null) return;
+    if (!reason.trim()) return toast('กรุณาใส่เหตุผล');
+    body.reason = reason.trim();
+  }
+  btn.disabled = true; show($('ticketError'), '');
+  try {
+    const { order } = await api(`/api/admin/payments/${p.id}/${action}`, { method: 'POST', body });
+    renderTicket(order); loadOrders();
+    toast(action === 'verify' ? 'ยืนยันแล้ว ลงรายรับเรียบร้อย' : 'แจ้งลูกค้าว่าสลิปไม่ผ่านแล้ว');
+  } catch (e) {
+    if (onAuthError(e)) return;
+    if (e.status === 409) await openOrder(o.orderNo);
+    show($('ticketError'), e.message);
+  } finally { btn.disabled = false; }
+}
+
+$('mSubmit').addEventListener('click', async () => {
+  const o = state.current; const btn = $('mSubmit');
+  const method = $('mMethod').value; const receivedDate = $('mDate').value;
+  if (!receivedDate) return toast('กรุณาเลือกวันที่รับเงิน');
+  if (!confirm(`บันทึกว่าได้รับเงิน ${baht(o.totalSatang)} (${METHOD_LABEL[method]}) วันที่ ${thaiDate(receivedDate)}?\nระบบจะเปลี่ยนเป็นชำระแล้วและลงรายรับ`)) return;
+  btn.disabled = true; show($('ticketError'), '');
+  try {
+    const { order } = await api(`/api/admin/orders/${encodeURIComponent(o.orderNo)}/payments`, { method: 'POST', body: { version: o.version, method, receivedDate, note: $('mNote').value } });
+    renderTicket(order); loadOrders(); toast('บันทึกรับเงินและลงรายรับแล้ว');
+  } catch (e) {
+    if (onAuthError(e)) return;
+    if (e.status === 409) await openOrder(o.orderNo);
+    show($('ticketError'), e.message);
+  } finally { btn.disabled = false; }
+});
+
+/* ---------------- dashboard ---------------- */
+async function loadDashboard() {
+  show($('dashError'), '');
+  try {
+    const d = await api('/api/admin/dashboard');
+    $('dReceived').textContent = baht(d.receivedToday.totalSatang);
+    $('dReceivedSub').textContent = `${d.receivedToday.count} รายการ  ${thaiDate(d.today)}`;
+    const fig = (id, main, sub) => $(id).replaceChildren(main, sub ? el('small', { text: sub }) : '');
+    fig('dMonth', baht(d.receivedThisMonth.totalSatang), `${d.receivedThisMonth.count} รายการ`);
+    fig('dCreated', baht(d.ordersToday.totalSatang), `${d.ordersToday.count} บิล`);
+    fig('dUnpaid', baht(d.unpaid.totalSatang), `${d.unpaid.count} บิล`);
+    fig('dInProgress', `${d.inProgress.count} งาน`);
+    const max = Math.max(...d.last7Days.map(x => x.totalSatang), 1);
+    $('dBars').replaceChildren(...d.last7Days.map(x => {
+      const fill = el('div', { class: 'fill' }); fill.style.height = `${Math.round((x.totalSatang / max) * 100)}%`;
+      const day = new Date(x.date + 'T00:00:00+07:00').toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', weekday: 'short' });
+      return el('div', { class: `bar${x.date === d.today ? ' today' : ''}`, title: `${thaiDate(x.date)} ${baht(x.totalSatang)}` },
+        el('span', { class: 'v', text: x.totalSatang ? Math.round(x.totalSatang / 100).toLocaleString('th-TH') : '' }), fill, el('span', { text: day }));
+    }));
+    $('dAwaitCount').textContent = d.awaitingVerification.count;
+    $('dAwaitSum').textContent = d.awaitingVerification.count ? `รวม ${baht(d.awaitingVerification.totalSatang)} ตรวจยอดเงินเข้าแล้วกดยืนยันในแต่ละรายการ` : 'ไม่มีสลิปรอตรวจ';
+    $('dAwaitList').replaceChildren(...d.awaitingList.map(o => el('li', {}, el('button', { class: 'order-row', type: 'button', onclick: () => goToOrder(o.orderNo) },
+      el('span', { class: 'who', text: o.customerName }), el('span', { class: 'amt num', text: baht(o.totalSatang) }),
+      el('span', { class: 'meta', text: `${o.orderNo}  ${o.title}` }), el('span', {}, el('span', { class: 'badge awaiting_verification', text: 'รอตรวจสลิป' }))))));
+    $('dAwaitList').hidden = !d.awaitingList.length;
+  } catch (e) { if (!onAuthError(e)) show($('dashError'), e.message); }
+}
+
+/* ---------------- income ---------------- */
+function incomeParams() {
+  const p = new URLSearchParams();
+  if ($('fMonth').value) p.set('month', $('fMonth').value);
+  else { if ($('fFrom').value) p.set('from', $('fFrom').value); if ($('fTo').value) p.set('to', $('fTo').value); }
+  if ($('fQ').value.trim()) p.set('q', $('fQ').value.trim());
+  return p;
+}
+$('fMonth').addEventListener('change', () => { if ($('fMonth').value) { $('fFrom').value = ''; $('fTo').value = ''; } });
+for (const id of ['fFrom', 'fTo']) $(id).addEventListener('change', () => { if ($(id).value) $('fMonth').value = ''; });
+$('incomeFilter').addEventListener('submit', e => { e.preventDefault(); loadIncome(); });
+$('fClear').addEventListener('click', () => { $('incomeFilter').reset(); loadIncome(); });
+$('incomeMore').addEventListener('click', () => loadIncome(true));
+
+async function loadIncome(more = false) {
+  if (!state.view) return;
+  if (!more && !$('fMonth').value && !$('fFrom').value && !$('fTo').value && !state.incomeTouched) $('fMonth').value = todayYmd().slice(0, 7);
+  state.incomeTouched = true;
+  const params = incomeParams();
+  $('csvLink').href = '/api/admin/income.csv?' + params;
+  if (more && state.incomeCursor) params.set('cursor', state.incomeCursor);
+  show($('incomeError'), ''); $('incomeMore').disabled = true;
+  try {
+    const d = await api('/api/admin/income?' + params);
+    if (!more) $('incomeRows').replaceChildren();
+    $('incomeSum').replaceChildren(el('span', { text: `รวม ${d.totals.count} รายการ` }), el('b', { text: baht(d.totals.totalSatang) }));
+    for (const i of d.income) {
+      $('incomeRows').append(el('tr', {},
+        el('td', { text: thaiDate(i.receivedDate) }),
+        el('td', {}, el('button', { type: 'button', text: i.orderNo, onclick: () => goToOrder(i.orderNo) })),
+        el('td', {}, i.customerName, el('div', { class: 'sub', text: i.title })),
+        el('td', { text: METHOD_LABEL[i.method] || i.method }),
+        el('td', { class: 'r', text: baht(i.amountSatang) })));
+    }
+    if (!$('incomeRows').children.length) $('incomeRows').append(el('tr', {}, el('td', { colspan: '5', class: 'empty muted', text: 'ไม่มีรายรับในช่วงที่เลือก' })));
+    state.incomeCursor = d.nextCursor; $('incomeMore').hidden = !d.nextCursor;
+  } catch (e) { if (!onAuthError(e)) show($('incomeError'), e.message); }
+  finally { $('incomeMore').disabled = false; }
+}
 
 /* ---------------- start ---------------- */
 addEventListener('resize', () => { if (isDesktop()) { $('side').classList.remove('detail-open'); document.body.style.overflow = ''; } });

@@ -9,7 +9,9 @@
 | GET | `/api/health` | `{ ok, paymentsConfigured, env }` |
 | GET | `/api/config` | `{ shopName, lineOaId, env }` |
 | GET | `/api/pay/:token` | ข้อมูลออเดอร์สำหรับลูกค้า + `promptPayPayload` (สร้างจากยอดใน D1) · rate limit 120 ครั้ง/10 นาที/IP · token ผิดได้ 404 เหมือนกันทุกกรณี |
-| GET | `/pay/:token` | หน้าเว็บลูกค้า (`public/pay.html`, Phase 5) |
+| GET | `/api/pay/:token/qr.png` | รูป QR พร้อมเพย์ (PNG) ตามยอดใน D1 · เฉพาะสถานะ `pending` |
+| POST | `/api/pay/:token/slip` | ลูกค้าส่งสลิป: multipart `slip` (PNG/JPG/WEBP ≤ 8 MB ตรวจจากเนื้อไฟล์) + `note` · header `Idempotency-Key` · 10 ครั้ง/10 นาที/IP |
+| GET | `/pay/:token` | หน้าเว็บลูกค้า (`public/pay.html`) |
 
 ข้อมูลที่ลูกค้าเห็น **ไม่มี** หมายเหตุภายใน ข้อมูลติดต่อลูกค้า หรือ id ภายใน
 
@@ -25,6 +27,13 @@
 | GET | `/api/admin/orders/:orderNo` | รายละเอียด + `payUrl` + payments + events |
 | PATCH | `/api/admin/orders/:orderNo` | `{ version, title?, note?, internalNote?, items?, discount? }` เฉพาะสถานะ `pending` |
 | POST | `/api/admin/orders/:orderNo/status` | `{ to, version, note? }` |
+| POST | `/api/admin/orders/:orderNo/payments` | บันทึกรับเงินเอง (สลิปทาง LINE/เงินสด): `{ version, method, receivedDate, note? }` → ชำระแล้ว + ลงรายรับ |
+| POST | `/api/admin/payments/:id/verify` | `{ version }` ยืนยันสลิป → ชำระแล้ว + ลงรายรับ (วันที่รับเงิน = วันที่ลูกค้าส่งสลิป) |
+| POST | `/api/admin/payments/:id/reject` | `{ version, reason }` สลิปไม่ผ่าน → กลับเป็นรอชำระ ลูกค้าเห็นเหตุผล |
+| GET | `/api/admin/payments/:id/slip` | เปิดรูปสลิป (R2 private) |
+| GET | `/api/admin/dashboard` | ยอดวันนี้/เดือนนี้, ออกบิลวันนี้, รอตรวจ, ยังไม่ชำระ, รายรับ 7 วัน (ตามเวลาไทย) |
+| GET | `/api/admin/income?month=YYYY-MM` หรือ `from=&to=`, `q=`, `cursor=` | รายการรายรับ + ยอดรวมตามตัวกรอง หน้าละ 50 |
+| GET | `/api/admin/income.csv` | ตัวกรองเดียวกัน ไฟล์ CSV เปิดใน Excel ภาษาไทยได้ (มี BOM, กันสูตรอันตราย) |
 
 ### สร้างออเดอร์
 ```json
@@ -46,10 +55,17 @@
 |---|---|
 | pending → cancelled | admin (`/status`) |
 | paid → processing / completed, processing → completed | admin (`/status`) |
-| pending → awaiting_verification | ลูกค้าส่งสลิป (Phase 6) |
-| awaiting_verification → paid (+ ลงรายรับ) | admin ยืนยันการชำระ (Phase 7) |
-| awaiting_verification → pending | admin ปฏิเสธสลิป (Phase 7) |
+| pending → awaiting_verification | ลูกค้าส่งสลิป |
+| awaiting_verification → paid (+ ลงรายรับ) | admin ยืนยันการชำระ |
+| pending → paid (+ ลงรายรับ) | admin บันทึกรับเงินเอง |
+| awaiting_verification → pending | admin ปฏิเสธสลิป |
 
 ### การแก้ไขพร้อมกัน
 ทุกการแก้ต้องส่ง `version` ล่าสุด ถ้าไม่ตรงได้ 409 · ทุก batch เริ่มด้วย guard ที่ทำให้ทั้ง batch ย้อนกลับเมื่อเงื่อนไขไม่ผ่าน
 ยอดเงินถูกล็อกด้วย trigger ใน D1 เมื่อมีการส่งหลักฐานการชำระแล้ว
+
+### รายรับ
+ลงอัตโนมัติเมื่อยืนยันการชำระเท่านั้น (ไม่มีปุ่มเพิ่มรายรับด้วยมือ) · `income.order_id` และ `income.payment_id` เป็น UNIQUE และ trigger ใน D1 ตรวจว่ามาจากการชำระที่ยืนยันแล้ว ยอดตรงกับออเดอร์ → ลงซ้ำไม่ได้แม้กดพร้อมกัน
+
+### สลิปใน R2
+key: `slips/YYYY/MM/<เลขออเดอร์>/<สุ่ม>.<png|jpg|webp>` · bucket เป็น private เปิดได้ผ่าน admin เท่านั้น · ถ้าบันทึก D1 ไม่สำเร็จ ไฟล์ที่เพิ่งอัปโหลดจะถูกลบทันที

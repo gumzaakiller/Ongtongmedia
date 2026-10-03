@@ -219,3 +219,61 @@ textarea { min-height: 76px; resize: vertical; }
 .center { text-align: center; }
 .pay-foot { text-align: center; padding: 8px 0; }
 .pay-foot a { white-space: nowrap; }
+
+/* ---------- admin navigation ---------- */
+.tabs-nav { display: flex; gap: 4px; padding: 0 12px; background: var(--black); position: sticky; top: 64px; z-index: 19; }
+.tab-btn { flex: 1; max-width: 200px; min-height: 46px; border: 0; border-bottom: 4px solid transparent; background: none; color: var(--white); font-weight: 700; cursor: pointer; }
+.tab-btn[aria-pressed="true"] { color: var(--yellow); border-bottom-color: var(--yellow); }
+.view-wrap { max-width: 760px; margin: 0 auto; padding: 16px 16px 40px; display: grid; gap: 16px; }
+.view-wrap.wide { max-width: 1100px; }
+.view-wrap > * { min-width: 0; }
+
+/* dashboard: today's summary printed like a job ticket */
+.day-ticket .ticket-head .title { font-size: 16px; color: var(--yellow); }
+.day-ticket .big { font-size: 44px; font-weight: 800; line-height: 1.15; }
+.figures { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; margin: 12px 0 0; }
+.figures dt { color: var(--ink-2); }
+.figures dd { margin: 0; font-weight: 800; text-align: right; }
+.figures dd small { display: block; font-weight: 400; color: var(--ink-2); font-size: 13px; }
+.bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 150px; padding-top: 8px; }
+.bar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; font-size: 12px; color: var(--ink-2); }
+.bar .fill { width: 100%; max-width: 40px; min-height: 3px; background: var(--black); border-radius: 6px 6px 0 0; }
+.bar.today .fill { background: var(--yellow); border: 2px solid var(--black); }
+.bar .v { font-size: 11px; color: var(--black); font-weight: 700; white-space: nowrap; }
+.count-pill { display: inline-block; min-width: 28px; padding: 0 8px; border-radius: 999px; background: var(--blue-bg); color: var(--blue); font-size: 15px; text-align: center; }
+.flat-list { margin-top: 4px; }
+
+/* income */
+.filters { padding-top: 6px; }
+.filter-grid { display: grid; gap: 0 12px; }
+@media (min-width: 760px) { .filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr); } }
+.filter-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.income-sum { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding: 14px 18px; background: var(--black); color: var(--white); border-radius: var(--radius); }
+.income-sum b { font-size: 30px; color: var(--yellow); }
+.table-wrap { overflow-x: auto; background: var(--white); border: 2px solid var(--black); border-radius: var(--radius); }
+.income-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 560px; }
+.income-table th { text-align: left; font-size: 13px; color: var(--ink-2); padding: 10px 14px; border-bottom: 2px solid var(--black); white-space: nowrap; }
+.income-table td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.income-table .r { text-align: right; white-space: nowrap; font-weight: 700; }
+.income-table .sub { font-size: 13px; color: var(--ink-2); }
+.income-table button { border: 0; background: none; padding: 0; font: inherit; text-decoration: underline; cursor: pointer; }
+
+/* payments inside the ticket */
+.pay-item { border: 2px solid var(--line); border-radius: var(--radius-sm); padding: 12px; margin-top: 10px; }
+.pay-item.submitted { border-color: var(--blue); background: #F6FAFF; }
+.pay-item .row { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pay-item .slip { display: block; margin-top: 10px; }
+.pay-item .slip img { display: block; max-width: 100%; max-height: 360px; margin: 0 auto; border-radius: 8px; border: 1px solid var(--line); background: var(--white); }
+.pay-item .acts { display: grid; gap: 8px; margin-top: 12px; }
+@media (min-width: 560px) { .pay-item .acts { grid-template-columns: 1fr 1fr; } }
+.badge.submitted { background: var(--blue-bg); color: var(--blue); }
+.badge.verified { background: var(--green-bg); color: var(--green); }
+.badge.rejected { background: var(--red-bg); color: var(--red); }
+.manual { margin-top: 12px; border: 2px dashed var(--black); border-radius: var(--radius-sm); padding: 10px 12px; }
+.manual summary { font-weight: 700; cursor: pointer; min-height: 32px; }
+
+/* customer slip upload */
+.upload-preview { display: block; max-width: 100%; max-height: 320px; margin: 10px auto 0; border-radius: 10px; border: 1px solid var(--line); }
+.file-pick { display: flex; align-items: center; justify-content: center; min-height: 56px; border: 2px dashed var(--black); border-radius: var(--radius-sm); background: var(--paper); font-weight: 700; cursor: pointer; text-align: center; padding: 10px; }
+.file-pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.file-pick:focus-within { outline: 3px solid var(--black); outline-offset: 2px; }
