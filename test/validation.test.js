@@ -1,37 +1,68 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateOrder, money, crc16, promptPayPayload } from '../src/shared.js';
-import worker, { imageType } from '../src/index.js';
-const sample = () => ({ customer:'ทดสอบ',phone:'0812345678',items:[{name:'งานพิมพ์',price:'100.25',qty:3}],shipping:'10.50' });
-test('server computes integer satang and ignores forged totals',()=>{
-  const order=validateOrder({...sample(),subtotal:1,total:1});
-  assert.equal(order.subtotal,30075);assert.equal(order.total,31125);
+import { toSatang } from '../src/lib/money.js';
+import { crc16, promptPayPayload } from '../src/lib/promptpay.js';
+import { validateNewOrder, validateOrderEdit } from '../src/lib/validate.js';
+import { bangkokDate, bangkokDayRange } from '../src/lib/time.js';
+import { randomToken, TOKEN_RE } from '../src/lib/crypto.js';
+
+const order = () => ({ customer: { name: 'คุณเอ', phone: '081-234-5678' }, title: 'ป้ายไวนิล', items: [{ description: 'ไวนิล 1x2 ม.', qty: 3, unitPrice: '100.25' }], discount: '10.50' });
+
+test('money parses to integer satang without float drift', () => {
+  assert.equal(toSatang('0.29'), 29);
+  assert.equal(toSatang('1,250.50'), 125050);
+  assert.equal(toSatang('1250.5'), 125050);
+  assert.equal(toSatang(19.99), 1999);
+  assert.equal(toSatang('0', 'x', { allowZero: true }), 0);
+  for (const bad of ['NaN', 'Infinity', '-1', '1.001', '', ' ', null, true, '1e3', '0x10', '1000000.01']) assert.throws(() => toSatang(bad), String(bad));
+  assert.throws(() => toSatang('0'));
 });
-test('invalid prices, quantities and incomplete rows are rejected',()=>{
-  for(const price of ['NaN','Infinity','-1','1.001','',null,true]) assert.throws(()=>validateOrder({...sample(),items:[{name:'x',price,qty:1}]}));
-  for(const qty of [0,-1,1.5,10001,'2']) assert.throws(()=>validateOrder({...sample(),items:[{name:'x',price:1,qty}]}));
-  assert.throws(()=>validateOrder({...sample(),items:[{name:'',price:1,qty:1}]}));
-  assert.throws(()=>validateOrder({...sample(),shipping:-1}));
-  assert.throws(()=>validateOrder({...sample(),phone:'x'}));
-  assert.throws(()=>validateOrder({...sample(),items:[]}));
-  assert.equal(money('0.29'),29);
+
+test('server recomputes totals and ignores totals sent by the browser', () => {
+  const v = validateNewOrder({ ...order(), subtotal: 1, total: 1, totalSatang: 1 });
+  assert.deepEqual([v.subtotal, v.discount, v.total], [30075, 1050, 29025]);
+  assert.equal(v.items[0].amount, 30075);
 });
-test('PromptPay encodes telephone, exact amount and CRC',()=>{
-  assert.equal(crc16('123456789'),'29B1');
-  const payload=promptPayPayload('0812345678',31125);
-  assert.ok(payload.includes('01130066812345678'));
-  assert.ok(payload.includes('5406311.25'));
-  assert.equal(payload.slice(-4),crc16(payload.slice(0,-4)));
-  assert.throws(()=>promptPayPayload('123',100));
-  assert.throws(()=>promptPayPayload('0812345678',0));
+
+test('order validation rejects bad input', () => {
+  const bad = [
+    { items: [] },
+    { items: Array.from({ length: 51 }, () => ({ description: 'x', qty: 1, unitPrice: 1 })) },
+    { items: [{ description: '', qty: 1, unitPrice: 1 }] },
+    { items: [{ description: 'x', qty: 0, unitPrice: 1 }] },
+    { items: [{ description: 'x', qty: 1.5, unitPrice: 1 }] },
+    { items: [{ description: 'x', qty: 1, unitPrice: '0' }] },
+    { items: [{ description: 'x', qty: 10000, unitPrice: '100000' }] },   // > 1,000,000 baht
+    { discount: '301' },                                                  // discount ≥ subtotal (300.75)
+    { customer: {} },
+    { customer: { name: 'x', phone: 'abc' } },
+    { customer: { id: -1 } }
+  ];
+  for (const patch of bad) assert.throws(() => validateNewOrder({ ...order(), ...patch }), JSON.stringify(patch).slice(0, 60));
+  assert.equal(validateNewOrder({ ...order(), title: '' }).title, 'ไวนิล 1x2 ม.');
+  assert.throws(() => validateOrderEdit({ title: 'x' }));                     // version required
+  assert.throws(() => validateOrderEdit({ version: 1, discount: '1' }));      // discount needs items
 });
-test('rejects a non-image disguised as a slip',()=>{
-  assert.throws(()=>imageType(new TextEncoder().encode('<html>not a png</html>')));
+
+test('PromptPay payload encodes phone, exact amount and CRC', () => {
+  assert.equal(crc16('123456789'), '29B1');
+  const p = promptPayPayload('0812345678', 31125);
+  assert.ok(p.includes('01130066812345678'));
+  assert.ok(p.includes('5406311.25'));
+  assert.ok(promptPayPayload('0812345678', 5).includes('54040.05'));
+  assert.equal(p.slice(-4), crc16(p.slice(0, -4)));
+  assert.throws(() => promptPayPayload('123', 100));
+  assert.throws(() => promptPayPayload('0812345678', 0));
 });
-test('missing shop or admin configuration fails closed',async()=>{
-  const request=path=>new Request('https://shop.test'+path,{method:'POST',headers:{Origin:'https://shop.test'}});
-  const env={};
-  assert.equal((await worker.fetch(request('/api/orders'),env)).status,503);
-  assert.equal((await worker.fetch(request('/api/admin/login'),env)).status,503);
-  assert.equal((await worker.fetch(new Request('https://shop.test/api/admin/orders'),{ADMIN_PASSWORD:'1234'})).status,503);
+
+test('Thai calendar day and day range', () => {
+  assert.equal(bangkokDate(new Date('2026-10-02T17:30:00Z')).ymd, '2026-10-03');
+  assert.equal(bangkokDate(new Date('2026-10-02T16:59:59Z')).compact, '20261002');
+  assert.deepEqual(bangkokDayRange('2026-10-03'), ['2026-10-02T17:00:00.000Z', '2026-10-03T17:00:00.000Z']);
+});
+
+test('pay-link tokens are 43-char base64url and unique', () => {
+  const tokens = new Set(Array.from({ length: 500 }, randomToken));
+  assert.equal(tokens.size, 500);
+  for (const t of tokens) assert.match(t, TOKEN_RE);
 });
