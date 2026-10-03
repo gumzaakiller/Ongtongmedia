@@ -5,6 +5,7 @@ import { ORDER_NO_RE, changeStatus, createOrder, editOrder, getOrderDetail, list
 import { getSlip, recordManualPayment, rejectPayment, verifyPayment } from '../services/payments.js';
 import { dashboard, incomeCsv, listIncome, parseIncomeFilters } from '../services/reports.js';
 import { bangkokDate } from '../lib/time.js';
+import { REQUEST_NO_RE, cancelRequest, getRequestDetail, getRequestFile, listRequests } from '../services/requests.js';
 
 const IDEMPOTENCY_RE = /^[A-Za-z0-9-]{16,64}$/;
 
@@ -50,6 +51,40 @@ export async function handleAdmin(request, env, path) {
       return new Response(await incomeCsv(env, filters), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${name}"` } });
     }
     return json(await listIncome(env, filters, { cursor: sp.get('cursor') }));
+  }
+
+  if (path === '/api/admin/requests' && method === 'GET') {
+    const sp = new URL(request.url).searchParams;
+    const cursorRaw = sp.get('cursor'); const cursor = cursorRaw ? Number(cursorRaw) : null;
+    if (cursorRaw && (!Number.isSafeInteger(cursor) || cursor < 1)) throw new AppError('หน้ารายการไม่ถูกต้อง');
+    return json(await listRequests(env, { status: sp.get('status') || null, cursor }));
+  }
+  const fm = path.match(/^\/api\/admin\/request-files\/(\d{1,12})$/);
+  if (fm && method === 'GET') return getRequestFile(env, Number(fm[1]));
+  const rm = path.match(/^\/api\/admin\/requests\/([^/]+)(\/quote|\/cancel)?$/);
+  if (rm) {
+    const requestNo = decodeURIComponent(rm[1]);
+    if (!REQUEST_NO_RE.test(requestNo)) throw new AppError('ไม่พบคำขอ', 404);
+    if (!rm[2] && method === 'GET') return json({ request: await getRequestDetail(env, requestNo, origin) });
+    if (rm[2] === '/cancel' && method === 'POST') {
+      const body = await readJson(request);
+      if (!Number.isInteger(body?.version)) throw new AppError('ข้อมูลไม่ถูกต้อง');
+      return json({ request: await cancelRequest(env, requestNo, { version: body.version, reason: text(body?.reason, 'เหตุผล', 300) }, origin) });
+    }
+    if (rm[2] === '/quote' && method === 'POST') {
+      // Quote = create the bill (same validation as a normal bill) and link it to the request in one transaction.
+      const key = request.headers.get('Idempotency-Key');
+      if (!IDEMPOTENCY_RE.test(key || '')) throw new AppError('รหัสคำขอไม่ถูกต้อง');
+      const body = await readJson(request, 64 * 1024);
+      if (!Number.isInteger(body?.requestVersion)) throw new AppError('ข้อมูลไม่ถูกต้อง');
+      const r = await env.DB.prepare('SELECT id,request_no FROM job_requests WHERE request_no=?').bind(requestNo).first();
+      if (!r) throw new AppError('ไม่พบคำขอ', 404);
+      const input = validateNewOrder(body);
+      try {
+        const { created, order } = await createOrder(env, input, key, origin, { id: r.id, version: body.requestVersion, requestNo: r.request_no });
+        return json({ order }, created ? 201 : 200);
+      } catch (e) { throw mapDbError(e) || e; }
+    }
   }
 
   const pm = path.match(/^\/api\/admin\/payments\/(\d{1,12})\/(verify|reject|slip)$/);

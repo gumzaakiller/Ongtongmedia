@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#000000">
+  <title>สถานะคำขอ | อองตองมีเดีย</title>
+  <link rel="icon" href="/shop-logo.png">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/request.js"></script>
+</head>
+<body class="pay-page">
+<header class="topbar">
+  <a href="/" class="home-link"><img src="/shop-logo.png" width="40" height="40" alt="กลับหน้าแรก"></a>
+  <div><div class="shop">อองตองมีเดีย</div><div class="role">สถานะคำขอ</div></div>
+</header>
+<main class="pay-wrap">
+  <p id="loading" class="notice">กำลังโหลด...</p>
+  <section id="errorBox" class="notice error" role="alert" hidden></section>
+  <div id="content" hidden>
+    <p id="statusBox" class="status-box" role="status"></p>
+    <a id="payBtn" class="btn primary block big-cta" hidden>ไปหน้าชำระเงิน</a>
+    <article class="ticket">
+      <div class="ticket-head">
+        <div class="no" id="reqNo"></div>
+        <div class="title" id="reqSummary"></div>
+        <span class="badge" id="reqBadge"></span>
+      </div>
+      <div class="perf" aria-hidden="true"></div>
+      <div class="ticket-body">
+        <dl class="figures" id="reqDetails"></dl>
+        <div id="reqNoteWrap" hidden><h3>รายละเอียด</h3><div class="note-box" id="reqNote"></div></div>
+        <div id="reqFilesWrap" hidden><h3>ไฟล์ที่แนบ</h3><ul class="file-list" id="reqFiles"></ul></div>
+      </div>
+    </article>
+    <a id="lineBtn" class="btn block" rel="noopener">คุยกับร้าน / ส่งไฟล์เพิ่มทาง LINE</a>
+  </div>
+</main>
+</body>
+</html>

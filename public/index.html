@@ -3,24 +3,50 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#FFD60A">
-  <title>อองตองมีเดีย | ชำระเงิน</title>
+  <meta name="theme-color" content="#000000">
+  <title>อองตองมีเดีย | สั่งงานป้าย และชำระเงิน</title>
   <link rel="icon" href="/shop-logo.png">
   <link rel="stylesheet" href="/css/app.css">
   <script type="module" src="/js/landing.js"></script>
 </head>
 <body>
-<main class="landing">
-  <img src="/shop-logo.png" width="140" height="140" alt="โลโก้อองตองมีเดีย">
-  <h1>อองตองมีเดีย</h1>
-  <p class="muted">ถ้าได้รับลิงก์ชำระเงินจากร้าน กรุณาเปิดจากลิงก์นั้น<br>ยอดชำระและ QR พร้อมเพย์จะแสดงในหน้าของคุณ</p>
-  <div class="landing-actions">
-    <a class="btn primary" href="https://line.me/R/ti/p/@653ercqc" rel="noopener">ติดต่อร้านทาง LINE</a>
-    <a class="btn" id="messengerBtn" rel="noopener" hidden>Messenger</a>
-    <a class="btn" id="facebookBtn" rel="noopener" hidden>เพจ Facebook</a>
-    <a class="btn" href="tel:0804938357">โทร 080-493-8357</a>
-  </div>
-  <p class="small muted mt-16"><a href="/admin">สำหรับร้าน: เข้าสู่ระบบผู้ดูแล</a></p>
+<header class="topbar">
+  <img src="/shop-logo.png" width="40" height="40" alt="">
+  <div><div class="shop">อองตองมีเดีย</div><div class="role">ร้านป้าย งานพิมพ์ งานออกแบบ</div></div>
+</header>
+<main class="home">
+  <section class="home-hero">
+    <img src="/shop-logo.png" width="120" height="120" alt="โลโก้อองตองมีเดีย">
+    <h1>อองตองมีเดีย</h1>
+    <p class="muted">สั่งทำป้าย สติ๊กเกอร์ และงานออกแบบ ส่งรายละเอียดมา ร้านจะแจ้งราคาให้</p>
+  </section>
+
+  <nav class="home-menu" aria-label="เมนูหลัก">
+    <a class="menu-card order" href="/order">
+      <b>สั่งงาน</b>
+      <span>เลือกประเภทป้าย บอกขนาด จำนวน แนบไฟล์งาน</span>
+    </a>
+    <section class="menu-card pay" aria-labelledby="payTitle">
+      <b id="payTitle">ชำระเงิน / ติดตามงาน</b>
+      <span>ร้านจะส่งลิงก์ชำระเงินให้ทาง LINE หรือ Messenger กดลิงก์นั้นเพื่อดูยอดและ QR พร้อมเพย์</span>
+      <div id="recentWrap" hidden>
+        <h3 class="recent-title">รายการที่เคยเปิดในเครื่องนี้</h3>
+        <ul class="recent" id="recentList"></ul>
+      </div>
+    </section>
+  </nav>
+
+
+  <section class="pay-card" aria-labelledby="contactTitle">
+    <h2 id="contactTitle">ติดต่อร้าน</h2>
+    <div class="landing-actions">
+      <a class="btn primary" href="https://line.me/R/ti/p/@653ercqc" rel="noopener">LINE @653ercqc</a>
+      <a class="btn" id="messengerBtn" rel="noopener" hidden>Messenger</a>
+      <a class="btn" id="facebookBtn" rel="noopener" hidden>เพจ Facebook</a>
+      <a class="btn" href="tel:0804938357">โทร 080-493-8357</a>
+    </div>
+  </section>
+  <p class="small muted center"><a href="/admin">สำหรับร้าน: เข้าสู่ระบบผู้ดูแล</a></p>
 </main>
 </body>
 </html>

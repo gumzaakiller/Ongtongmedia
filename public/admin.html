@@ -38,7 +38,8 @@
   </header>
   <nav class="tabs-nav" aria-label="เมนูผู้ดูแล">
     <button class="tab-btn" type="button" data-view="dash" aria-pressed="false">ภาพรวม</button>
-    <button class="tab-btn" type="button" data-view="orders" aria-pressed="true">รายการ</button>
+    <button class="tab-btn" type="button" data-view="requests" aria-pressed="false">คำขอ <span class="tab-count" id="reqCount" hidden></span></button>
+    <button class="tab-btn" type="button" data-view="orders" aria-pressed="true">บิล</button>
     <button class="tab-btn" type="button" data-view="income" aria-pressed="false">รายรับ</button>
   </nav>
 
@@ -62,12 +63,52 @@
         <div class="bars" id="dBars" aria-label="กราฟรายรับ 7 วันล่าสุด"></div>
       </div>
     </article>
+    <button class="panel new-req" id="dNewReq" type="button" hidden>
+      <b>คำขอสั่งงานใหม่ <span class="count-pill" id="dNewReqCount">0</span></b>
+      <span class="muted small">ดูรายละเอียดแล้วแจ้งราคาให้ลูกค้า</span>
+    </button>
     <section class="panel" aria-labelledby="awaitTitle">
       <h2 id="awaitTitle">รอตรวจสลิป <span class="count-pill" id="dAwaitCount">0</span></h2>
       <p class="muted small" id="dAwaitSum"></p>
       <ul class="orders flat-list" id="dAwaitList"></ul>
     </section>
     <p id="dashError" class="notice error" role="alert" hidden></p>
+  </section>
+
+  <!-- Job requests -->
+  <section id="requestsView" class="workspace" hidden aria-labelledby="reqTitle">
+    <section>
+      <div class="list-head"><h1 id="reqTitle">คำขอสั่งงาน</h1><button id="reqReload" class="btn ghost" type="button">โหลดใหม่</button></div>
+      <div class="chips" id="reqChips" role="group" aria-label="กรองคำขอ"></div>
+      <p id="reqError" class="notice error" role="alert" hidden></p>
+      <ul id="reqList" class="orders"></ul>
+      <button id="reqMore" class="btn block more" type="button" hidden>แสดงเพิ่ม</button>
+    </section>
+    <aside class="side" id="reqSide">
+      <article id="reqTicket" class="ticket" hidden>
+        <div class="ticket-head">
+          <button id="reqClose" class="btn on-dark close" type="button">กลับ</button>
+          <div class="no" id="rqNo"></div>
+          <div class="title" id="rqSummary"></div>
+          <span class="badge" id="rqStatus"></span>
+        </div>
+        <div class="perf" aria-hidden="true"></div>
+        <div class="ticket-body">
+          <h3>ลูกค้า</h3>
+          <div class="cust" id="rqCustomer"></div>
+          <div class="muted small" id="rqContact"></div>
+          <h3>รายละเอียดงาน</h3>
+          <dl class="figures" id="rqDetails"></dl>
+          <div id="rqNoteWrap" hidden><h3>ข้อความจากลูกค้า</h3><div class="note-box" id="rqNote"></div></div>
+          <div id="rqFilesWrap" hidden><h3>ไฟล์ที่แนบ</h3><div class="req-files" id="rqFiles"></div></div>
+          <p id="rqBill" class="notice ok" hidden></p>
+          <p id="rqError" class="notice error" role="alert" hidden></p>
+          <div class="status-actions" id="rqActions"></div>
+          <p class="small muted">ลิงก์ติดตามสถานะของลูกค้า: <a id="rqTrack" target="_blank" rel="noopener">เปิด</a></p>
+        </div>
+      </article>
+      <p id="reqEmptySide" class="notice">เลือกคำขอทางซ้ายเพื่อดูรายละเอียด</p>
+    </aside>
   </section>
 
   <!-- Income -->
@@ -118,7 +159,8 @@
     <aside id="side" class="side">
       <!-- Create -->
       <form id="createForm" class="panel" hidden novalidate>
-        <h2>สร้างรายการเรียกเก็บเงิน</h2>
+        <h2 id="createTitle">สร้างรายการเรียกเก็บเงิน</h2>
+        <p id="fromReqNote" class="notice" hidden></p>
 
         <h3 class="flat">ลูกค้า</h3>
         <div id="customerPicked" class="picked" hidden>

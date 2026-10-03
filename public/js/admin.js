@@ -28,15 +28,17 @@ async function showApp() {
 }
 
 /* ---------------- views ---------------- */
-const VIEWS = { dash: 'dashView', orders: 'ordersView', income: 'incomeView' };
+const VIEWS = { dash: 'dashView', requests: 'requestsView', orders: 'ordersView', income: 'incomeView' };
 async function setView(name) {
   state.view = name;
   for (const [v, id] of Object.entries(VIEWS)) $(id).hidden = v !== name;
   for (const b of document.querySelectorAll('.tab-btn')) b.setAttribute('aria-pressed', String(b.dataset.view === name));
   if (name !== 'orders') { $('side').classList.remove('detail-open'); document.body.style.overflow = ''; }
+  if (name !== 'requests') $('reqSide').classList.remove('detail-open');
   scrollTo(0, 0);
   if (name === 'dash') return loadDashboard();
   if (name === 'income') return loadIncome();
+  if (name === 'requests') return loadRequests();
   await loadOrders();
   if (isDesktop() && !state.current) openCreate();
 }
@@ -157,7 +159,9 @@ function recalc() {
 function resetCreate() {
   $('createForm').reset(); $('items').replaceChildren(); addItemRow(false);
   setCustomer(null); show($('createError'), ''); recalc();
-  state.createKey = null;
+  state.createKey = null; state.fromRequest = null;
+  $('createTitle').textContent = 'สร้างรายการเรียกเก็บเงิน'; $('fromReqNote').hidden = true;
+  $('createSubmit').textContent = 'สร้างรายการและรับลิงก์';
 }
 function openCreate() {
   state.current = null; markCurrent();
@@ -206,15 +210,18 @@ $('createForm').addEventListener('submit', async e => {
   state.createKey ||= crypto.randomUUID();
   state.busy = true; $('createSubmit').disabled = true; $('createSubmit').textContent = 'กำลังสร้าง...';
   try {
-    const { order } = await api('/api/admin/orders', { method: 'POST', body, headers: { 'Idempotency-Key': state.createKey } });
-    state.createKey = null;
+    const fromReq = state.fromRequest;
+    const { order } = fromReq
+      ? await api(`/api/admin/requests/${encodeURIComponent(fromReq.requestNo)}/quote`, { method: 'POST', body: { ...body, requestVersion: fromReq.version }, headers: { 'Idempotency-Key': state.createKey } })
+      : await api('/api/admin/orders', { method: 'POST', body, headers: { 'Idempotency-Key': state.createKey } });
+    state.createKey = null; state.fromRequest = null; refreshRequestCount();
     await loadOrders();
     renderTicket(order); openSide('ticket');
     toast('สร้างรายการแล้ว');
   } catch (err) {
     if (!onAuthError(err)) show($('createError'), err.message);
     if (err.status && err.status < 500 && err.status !== 429) state.createKey = null; // input problem: next try is a new request
-  } finally { state.busy = false; $('createSubmit').disabled = false; $('createSubmit').textContent = 'สร้างรายการและรับลิงก์'; }
+  } finally { state.busy = false; $('createSubmit').disabled = false; $('createSubmit').textContent = state.fromRequest ? 'ออกบิลและรับลิงก์ชำระเงิน' : 'สร้างรายการและรับลิงก์'; }
 });
 
 /* ---------------- ticket ---------------- */
@@ -359,6 +366,8 @@ async function loadDashboard() {
       return el('div', { class: `bar${x.date === d.today ? ' today' : ''}`, title: `${thaiDate(x.date)} ${baht(x.totalSatang)}` },
         el('span', { class: 'v', text: x.totalSatang ? Math.round(x.totalSatang / 100).toLocaleString('th-TH') : '' }), fill, el('span', { text: day }));
     }));
+    $('dNewReq').hidden = !d.newRequests.count; $('dNewReqCount').textContent = d.newRequests.count;
+    setRequestCount(d.newRequests.count);
     $('dAwaitCount').textContent = d.awaitingVerification.count;
     $('dAwaitSum').textContent = d.awaitingVerification.count ? `รวม ${baht(d.awaitingVerification.totalSatang)} ตรวจยอดเงินเข้าแล้วกดยืนยันในแต่ละรายการ` : 'ไม่มีสลิปรอตรวจ';
     $('dAwaitList').replaceChildren(...d.awaitingList.map(o => el('li', {}, el('button', { class: 'order-row', type: 'button', onclick: () => goToOrder(o.orderNo) },
@@ -408,6 +417,118 @@ async function loadIncome(more = false) {
   finally { $('incomeMore').disabled = false; }
 }
 
+/* ---------------- job requests ---------------- */
+const REQ_LABEL = { new: 'ใหม่', quoted: 'แจ้งราคาแล้ว', cancelled: 'ยกเลิก' };
+const REQ_BADGE = { new: 'awaiting_verification', quoted: 'paid', cancelled: 'cancelled' };
+const REQ_FILTERS = [['new', 'ใหม่'], ['quoted', 'แจ้งราคาแล้ว'], ['cancelled', 'ยกเลิก'], ['', 'ทั้งหมด']];
+state.reqStatus = 'new'; state.reqCursor = null; state.request = null;
+function setRequestCount(n, more = false) { $('reqCount').textContent = more ? `${n}+` : String(n); $('reqCount').hidden = !n; }
+function refreshRequestCount() { api('/api/admin/requests?status=new').then(d => setRequestCount(d.requests.length, !!d.nextCursor)).catch(() => {}); }
+$('dNewReq').addEventListener('click', () => setView('requests'));
+for (const [value, label] of REQ_FILTERS) {
+  $('reqChips').append(el('button', { class: 'chip', type: 'button', 'aria-pressed': String(value === state.reqStatus), 'data-status': value, text: label, onclick: () => {
+    state.reqStatus = value;
+    for (const c of $('reqChips').children) c.setAttribute('aria-pressed', String(c.dataset.status === value));
+    loadRequests();
+  } }));
+}
+$('reqReload').addEventListener('click', () => loadRequests());
+$('reqMore').addEventListener('click', () => loadRequests(true));
+$('reqClose').addEventListener('click', () => { $('reqSide').classList.remove('detail-open'); document.body.style.overflow = ''; state.request = null; $('reqTicket').hidden = true; $('reqEmptySide').hidden = false; });
+
+async function loadRequests(more = false) {
+  const p = new URLSearchParams(); if (state.reqStatus) p.set('status', state.reqStatus);
+  if (more && state.reqCursor) p.set('cursor', state.reqCursor);
+  show($('reqError'), '');
+  try {
+    const d = await api('/api/admin/requests?' + p);
+    if (!more) $('reqList').replaceChildren();
+    for (const r of d.requests) $('reqList').append(el('li', {}, el('button', { class: 'order-row', type: 'button', 'data-no': r.requestNo, onclick: () => openRequest(r.requestNo) },
+      el('span', { class: 'who', text: r.customerName }), el('span', { class: 'meta', text: thaiDateTime(r.createdAt) }),
+      el('span', { class: 'meta', text: `${r.requestNo}  ${r.summary}${r.files ? `  แนบ ${r.files} ไฟล์` : ''}` }),
+      el('span', {}, el('span', { class: `badge ${REQ_BADGE[r.status]}`, text: REQ_LABEL[r.status] })))));
+    if (!$('reqList').children.length) $('reqList').append(el('li', { class: 'empty muted', text: state.reqStatus === 'new' ? 'ไม่มีคำขอใหม่' : 'ไม่มีคำขอ' }));
+    state.reqCursor = d.nextCursor; $('reqMore').hidden = !d.nextCursor;
+    if (state.reqStatus === 'new' && !more) setRequestCount(d.requests.length, !!d.nextCursor);
+  } catch (e) { if (!onAuthError(e)) show($('reqError'), e.message); }
+}
+
+async function openRequest(no) {
+  try {
+    const { request: r } = await api('/api/admin/requests/' + encodeURIComponent(no));
+    state.request = r; renderRequest(r);
+    $('reqTicket').hidden = false; $('reqEmptySide').hidden = true;
+    if (!isDesktop()) { $('reqSide').classList.add('detail-open'); document.body.style.overflow = 'hidden'; $('reqSide').scrollTop = 0; }
+  } catch (e) { if (!onAuthError(e)) toast(e.message); }
+}
+
+function renderRequest(r) {
+  $('rqNo').textContent = r.requestNo; $('rqSummary').textContent = r.summary;
+  $('rqStatus').className = `badge ${REQ_BADGE[r.status]}`; $('rqStatus').textContent = REQ_LABEL[r.status];
+  $('rqCustomer').textContent = r.customer.name;
+  $('rqContact').replaceChildren(...[
+    r.customer.phone ? el('a', { href: `tel:${r.customer.phone.replace(/[^\d+]/g, '')}`, text: `โทร ${r.customer.phone}` }) : null,
+    r.customer.lineId ? el('span', { text: `  LINE ${r.customer.lineId}` }) : null].filter(Boolean));
+  const d = r.details; const rows = [['งาน', r.categoryName]];
+  if (d.width && d.height) rows.push(['ขนาด', `${d.width} × ${d.height} ${d.unit === 'm' ? 'เมตร' : 'ซม.'}`]);
+  rows.push(['จำนวน', String(d.qty)]);
+  if (d.options?.length) rows.push(['ตัวเลือก', d.options.join(', ')]);
+  rows.push(['ไฟล์งาน', d.artworkLabel]);
+  if (d.deadline) rows.push(['ต้องการรับงาน', thaiDate(d.deadline)]);
+  rows.push(['ส่งคำขอเมื่อ', thaiDateTime(r.createdAt)]);
+  $('rqDetails').replaceChildren(...rows.flatMap(([k, v]) => [el('dt', { text: k }), el('dd', { text: v })]));
+  $('rqNoteWrap').hidden = !d.details; $('rqNote').textContent = d.details;
+  $('rqFilesWrap').hidden = !r.files.length;
+  $('rqFiles').replaceChildren(...r.files.map(f => {
+    const url = `/api/admin/request-files/${f.id}`;
+    return f.mime === 'application/pdf'
+      ? el('a', { class: 'pdf', href: url, target: '_blank', rel: 'noopener', text: `PDF: ${f.name}` })
+      : el('a', { href: url, target: '_blank', rel: 'noopener', title: f.name }, el('img', { src: url, alt: f.name, loading: 'lazy' }));
+  }));
+  $('rqBill').hidden = !r.bill;
+  if (r.bill) $('rqBill').textContent = `ออกบิลแล้ว ${r.bill.orderNo} ยอด ${baht(r.bill.totalSatang)} (${STATUS_LABEL[r.bill.status]})`;
+  $('rqTrack').href = r.trackUrl;
+  show($('rqError'), '');
+  const acts = [];
+  if (r.status === 'new') {
+    acts.push(el('button', { class: 'btn primary block', type: 'button', text: 'แจ้งราคา / ออกบิล', onclick: () => quoteFromRequest(r) }));
+    acts.push(el('button', { class: 'btn danger block', type: 'button', text: 'ยกเลิกคำขอ', onclick: e => cancelReq(r, e.currentTarget) }));
+  }
+  if (r.bill) acts.push(el('button', { class: 'btn block', type: 'button', text: `เปิดบิล ${r.bill.orderNo}`, onclick: () => goToOrder(r.bill.orderNo) }));
+  $('rqActions').replaceChildren(...acts);
+}
+
+async function cancelReq(r, btn) {
+  const reason = prompt('เหตุผลที่ยกเลิก (ลูกค้าเห็นข้อความนี้)', 'ร้านไม่สามารถรับงานนี้ได้');
+  if (reason === null) return;
+  btn.disabled = true;
+  try {
+    const { request } = await api(`/api/admin/requests/${encodeURIComponent(r.requestNo)}/cancel`, { method: 'POST', body: { version: r.version, reason } });
+    state.request = request; renderRequest(request); loadRequests(); toast('ยกเลิกคำขอแล้ว');
+  } catch (e) { if (!onAuthError(e)) { show($('rqError'), e.message); if (e.status === 409) openRequest(r.requestNo); } }
+  finally { btn.disabled = false; }
+}
+
+// Opens the normal bill form, pre-filled from the request. Saving it quotes the request (one transaction on the server).
+async function quoteFromRequest(r) {
+  $('reqSide').classList.remove('detail-open'); document.body.style.overflow = '';
+  state.view = 'orders'; await setView('orders');
+  openCreate();
+  state.fromRequest = { requestNo: r.requestNo, version: r.version };
+  $('createTitle').textContent = 'แจ้งราคา / ออกบิล';
+  $('fromReqNote').textContent = `จากคำขอ ${r.requestNo}: ${r.summary}${r.details.options?.length ? ` (${r.details.options.join(', ')})` : ''}`;
+  $('fromReqNote').hidden = false;
+  $('cName').value = r.customer.name; $('cPhone').value = r.customer.phone; $('cLine').value = r.customer.lineId;
+  $('title').value = r.summary.slice(0, 300);
+  const row = $('items').querySelector('.item');
+  const sizeText = r.details.width && r.details.height ? ` ${r.details.width}×${r.details.height} ${r.details.unit === 'm' ? 'ม.' : 'ซม.'}` : '';
+  row.querySelector('.i-desc').value = `${r.categoryName}${sizeText}${r.details.options?.length ? ' ' + r.details.options.join(' ') : ''}`.slice(0, 300);
+  row.querySelector('.i-qty').value = String(r.details.qty || 1);
+  row.querySelector('.i-price').focus();
+  $('createSubmit').textContent = 'ออกบิลและรับลิงก์ชำระเงิน';
+  recalc();
+}
+
 /* ---------------- start ---------------- */
-addEventListener('resize', () => { if (isDesktop()) { $('side').classList.remove('detail-open'); document.body.style.overflow = ''; } });
+addEventListener('resize', () => { if (isDesktop()) { $('side').classList.remove('detail-open'); $('reqSide').classList.remove('detail-open'); document.body.style.overflow = ''; } });
 api('/api/admin/session').then(showApp).catch(e => { if (!onAuthError(e)) { showLogin(); show($('loginError'), e.message); } });

@@ -1,5 +1,6 @@
 import { $, STATUS_LABEL, api, baht, copyText, el, show, toast } from './util.js';
 import { BANK_APPS, bankLink, platform } from './banks.js';
+import { rememberRecent } from './recent.js';
 
 // Customer-facing wording per status (what happened + what to do next).
 const STATUS_MESSAGE = {
@@ -23,6 +24,7 @@ function lineUrl(lineOaId, data) {
 function render(data) {
   const { order, shop } = data;
   document.title = `${order.orderNo} | ${shop.name}`;
+  rememberRecent(order.orderNo, `บิล ${baht(order.totalSatang)}`);
   $('shopName').textContent = shop.name;
 
   // status

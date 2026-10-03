@@ -12,6 +12,10 @@
 | GET | `/api/pay/:token/qr.png` | รูป QR พร้อมเพย์ (PNG) ตามยอดใน D1 · เฉพาะสถานะ `pending` |
 | POST | `/api/pay/:token/slip` | ลูกค้าส่งสลิป: multipart `slip` (PNG/JPG/WEBP ≤ 8 MB ตรวจจากเนื้อไฟล์) + `note` · header `Idempotency-Key` · 10 ครั้ง/10 นาที/IP |
 | GET | `/pay/:token` | หน้าเว็บลูกค้า (`public/pay.html`) |
+| GET | `/api/catalog` | ประเภทงานในเมนูสั่งงาน (แก้ที่ `src/catalog.js`) |
+| POST | `/api/requests` | ลูกค้าส่งคำขอสั่งงาน: multipart `category, qty, width, height, unit, options[], artwork, deadline, details, name, phone, lineId, files[]` · ไฟล์ JPG/PNG/WEBP/PDF ≤ 5 ไฟล์ ไฟล์ละ ≤ 20 MB รวม ≤ 25 MB · `Idempotency-Key` · 5 ครั้ง/10 นาที/IP → `{ requestNo, trackUrl }` |
+| GET | `/api/requests/:token` | หน้าติดตามคำขอของลูกค้า + ลิงก์ชำระเงินเมื่อร้านแจ้งราคาแล้ว |
+| GET | `/order` · `/request/:token` | หน้าสั่งงาน · หน้าติดตามคำขอ |
 | POST | `/api/line/webhook` | LINE Messaging API webhook · ตรวจ `x-line-signature` (HMAC-SHA256) · ปิด (404) จนกว่าจะตั้ง `LINE_CHANNEL_SECRET` + `LINE_CHANNEL_ACCESS_TOKEN` |
 
 ข้อมูลที่ลูกค้าเห็น **ไม่มี** หมายเหตุภายใน ข้อมูลติดต่อลูกค้า หรือ id ภายใน
@@ -32,6 +36,11 @@
 | POST | `/api/admin/payments/:id/verify` | `{ version }` ยืนยันสลิป → ชำระแล้ว + ลงรายรับ (วันที่รับเงิน = วันที่ลูกค้าส่งสลิป) |
 | POST | `/api/admin/payments/:id/reject` | `{ version, reason }` สลิปไม่ผ่าน → กลับเป็นรอชำระ ลูกค้าเห็นเหตุผล |
 | GET | `/api/admin/payments/:id/slip` | เปิดรูปสลิป (R2 private) |
+| GET | `/api/admin/requests?status=new\|quoted\|cancelled&cursor=` | รายการคำขอสั่งงาน |
+| GET | `/api/admin/requests/:requestNo` | รายละเอียด + ไฟล์ + ข้อมูลติดต่อ |
+| GET | `/api/admin/request-files/:id` | เปิดไฟล์แนบ (R2 private) |
+| POST | `/api/admin/requests/:requestNo/quote` | แจ้งราคา = สร้างบิล (body เหมือนสร้างออเดอร์ + `requestVersion`) และผูกกับคำขอใน transaction เดียว · `Idempotency-Key` |
+| POST | `/api/admin/requests/:requestNo/cancel` | `{ version, reason }` เฉพาะคำขอใหม่ |
 | GET | `/api/admin/dashboard` | ยอดวันนี้/เดือนนี้, ออกบิลวันนี้, รอตรวจ, ยังไม่ชำระ, รายรับ 7 วัน (ตามเวลาไทย) |
 | GET | `/api/admin/income?month=YYYY-MM` หรือ `from=&to=`, `q=`, `cursor=` | รายการรายรับ + ยอดรวมตามตัวกรอง หน้าละ 50 |
 | GET | `/api/admin/income.csv` | ตัวกรองเดียวกัน ไฟล์ CSV เปิดใน Excel ภาษาไทยได้ (มี BOM, กันสูตรอันตราย) |

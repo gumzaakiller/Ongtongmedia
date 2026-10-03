@@ -42,6 +42,6 @@ export function applySecurityHeaders(response, path) {
   h.set('X-Frame-Options', 'DENY');
   h.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
   if (path.startsWith('/api/')) h.set('Cache-Control', 'no-store');
-  if (path.startsWith('/pay/') || path.startsWith('/api/pay/')) { h.set('X-Robots-Tag', 'noindex, nofollow'); h.set('Cache-Control', 'no-store'); }
+  if (path.startsWith('/pay/') || path.startsWith('/api/pay/') || path.startsWith('/request/') || path.startsWith('/api/requests/')) { h.set('X-Robots-Tag', 'noindex, nofollow'); h.set('Cache-Control', 'no-store'); }
   return result;
 }

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>สั่งงาน | อองตองมีเดีย</title>
+  <link rel="icon" href="/shop-logo.png">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/order.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <a href="/" class="home-link"><img src="/shop-logo.png" width="40" height="40" alt="กลับหน้าแรก"></a>
+  <div><div class="shop">อองตองมีเดีย</div><div class="role">สั่งงาน</div></div>
+</header>
+<main class="pay-wrap">
+  <noscript><p class="notice error">กรุณาเปิด JavaScript เพื่อสั่งงาน</p></noscript>
+
+  <form id="orderForm" class="order-form" novalidate hidden>
+    <section class="pay-card" aria-labelledby="catTitle">
+      <h2 id="catTitle">งานที่ต้องการ</h2>
+      <div class="cat-grid" id="catGrid" role="radiogroup" aria-labelledby="catTitle"></div>
+    </section>
+
+    <section class="pay-card" id="specCard" hidden aria-labelledby="specTitle">
+      <h2 id="specTitle">รายละเอียด</h2>
+      <div id="sizeFields">
+        <div class="size-row">
+          <div><label for="width">กว้าง</label><input id="width" inputmode="decimal" autocomplete="off" placeholder="เช่น 200"></div>
+          <span class="times" aria-hidden="true">×</span>
+          <div><label for="height">สูง</label><input id="height" inputmode="decimal" autocomplete="off" placeholder="เช่น 100"></div>
+          <div><label for="unit">หน่วย</label><select id="unit"><option value="cm">ซม.</option><option value="m">เมตร</option></select></div>
+        </div>
+        <p class="hint">ไม่แน่ใจขนาด เว้นว่างไว้ได้ แล้วบอกในรายละเอียด</p>
+      </div>
+      <label for="qty">จำนวน</label>
+      <input id="qty" inputmode="numeric" value="1" autocomplete="off">
+      <fieldset id="optionsWrap" class="opts" hidden><legend>ตัวเลือกเพิ่มเติม</legend><div id="optionList"></div></fieldset>
+
+      <fieldset class="opts"><legend>ไฟล์งาน</legend>
+        <label class="radio"><input type="radio" name="artwork" value="have" checked> มีไฟล์งานพร้อมพิมพ์แล้ว</label>
+        <label class="radio"><input type="radio" name="artwork" value="edit"> มีแบบ ให้ร้านปรับแก้</label>
+        <label class="radio"><input type="radio" name="artwork" value="need_design"> ให้ร้านออกแบบให้</label>
+      </fieldset>
+
+      <label for="details">รายละเอียดเพิ่มเติม</label>
+      <textarea id="details" maxlength="2000" placeholder="เช่น ข้อความบนป้าย สีที่ต้องการ ใช้ติดที่ไหน"></textarea>
+
+      <label for="deadline">ต้องการรับงานวันที่ (ไม่บังคับ)</label>
+      <input id="deadline" type="date">
+
+      <label>แนบไฟล์งาน / รูปตัวอย่าง (ไม่บังคับ)</label>
+      <label class="file-pick" for="files"><span id="filesLabel">แตะเพื่อเลือกไฟล์ (เลือกได้หลายไฟล์)</span>
+        <input id="files" type="file" multiple accept="image/png,image/jpeg,image/webp,application/pdf"></label>
+      <ul class="file-list" id="fileList"></ul>
+      <p class="hint">JPG, PNG, WEBP หรือ PDF ไม่เกิน 5 ไฟล์ รวมไม่เกิน 25 MB · ไฟล์ AI / PSD หรือไฟล์ใหญ่ ส่งทาง LINE หลังส่งคำขอ</p>
+    </section>
+
+    <section class="pay-card" id="contactCard" hidden aria-labelledby="contactTitle">
+      <h2 id="contactTitle">ติดต่อกลับ</h2>
+      <label for="name">ชื่อ / ชื่อร้าน</label>
+      <input id="name" maxlength="200" autocomplete="name">
+      <div class="row2">
+        <div><label for="phone">เบอร์โทร</label><input id="phone" type="tel" maxlength="30" autocomplete="tel"></div>
+        <div><label for="lineId">LINE ID</label><input id="lineId" maxlength="100" autocomplete="off"></div>
+      </div>
+      <p class="hint">ใส่อย่างน้อยหนึ่งช่อง ร้านจะติดต่อกลับเพื่อแจ้งราคา</p>
+      <p id="formError" class="notice error" role="alert" hidden></p>
+      <button id="submitBtn" class="btn primary block mt-16" type="submit">ส่งคำขอให้ร้าน</button>
+      <p class="hint center">ยังไม่ต้องชำระเงิน ร้านจะแจ้งราคาและส่งลิงก์ชำระเงินให้</p>
+    </section>
+  </form>
+
+  <section id="doneCard" class="pay-card done" hidden aria-labelledby="doneTitle">
+    <h2 id="doneTitle">ส่งคำขอเรียบร้อย</h2>
+    <p class="done-no num" id="doneNo"></p>
+    <p>ร้านจะตรวจรายละเอียดและแจ้งราคากลับทางเบอร์โทรหรือ LINE ที่ให้ไว้</p>
+    <div class="status-actions">
+      <a class="btn primary block" id="doneTrack">ดูสถานะคำขอ</a>
+      <a class="btn block" id="doneLine" rel="noopener">ส่งไฟล์เพิ่ม / คุยกับร้านทาง LINE</a>
+      <a class="btn ghost block" href="/order">สั่งงานอื่นเพิ่ม</a>
+    </div>
+    <p class="hint">บันทึกลิงก์ "ดูสถานะคำขอ" ไว้ หรือเปิดจากหน้าแรกของเว็บในเครื่องนี้ได้</p>
+  </section>
+  <p id="loadError" class="notice error" role="alert" hidden></p>
+</main>
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

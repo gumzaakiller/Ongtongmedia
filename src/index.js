@@ -3,6 +3,7 @@ import { shopConfig } from './config.js';
 import { handleAdmin } from './routes/admin.js';
 import { handlePayApi, handlePayQr, handlePaySlip } from './routes/pay.js';
 import { handleLineWebhook } from './services/line.js';
+import { handleCatalog, handleCreateRequest, handleGetRequest } from './routes/requests.js';
 
 async function route(request, env) {
   const url = new URL(request.url);
@@ -24,6 +25,10 @@ async function route(request, env) {
   const pay = path.match(/^\/api\/pay\/([^/]+)(\/qr\.png|\/slip)?$/);
   if (pay && method === 'GET' && pay[2] !== '/slip') return pay[2] ? handlePayQr(request, env, pay[1]) : handlePayApi(request, env, pay[1]);
   if (pay && method === 'POST' && pay[2] === '/slip') return handlePaySlip(request, env, pay[1]);
+  if (path === '/api/catalog' && method === 'GET') return handleCatalog();
+  if (path === '/api/requests' && method === 'POST') return handleCreateRequest(request, env);
+  const req = path.match(/^\/api\/requests\/([^/]+)$/);
+  if (req && method === 'GET') return handleGetRequest(request, env, req[1]);
   if (path.startsWith('/api/admin/')) return handleAdmin(request, env, path);
   if (path.startsWith('/api/')) throw new AppError('ไม่พบ API หรือวิธีเรียกไม่ถูกต้อง', 404);
 
@@ -31,6 +36,7 @@ async function route(request, env) {
   // Customer pay page: one static page (public/pay.html) that reads the token from its own URL. (UI: Phase 5)
   // Fetch "/pay", not "/pay.html": static assets redirect *.html to the extensionless path, which would drop the token.
   if (/^\/pay\/[^/]+$/.test(path)) return env.ASSETS.fetch(new Request(new URL('/pay', url), { method, headers: request.headers }));
+  if (/^\/request\/[^/]+$/.test(path)) return env.ASSETS.fetch(new Request(new URL('/request', url), { method, headers: request.headers }));
   return env.ASSETS.fetch(request); // "/admin" → public/admin.html (Phase 4)
 }
 

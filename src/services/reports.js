@@ -9,14 +9,15 @@ export async function dashboard(env) {
   const monthStart = today.slice(0, 8) + '01';
   const weekStart = addDays(today, -6);
   const [dayStart, dayEnd] = bangkokDayRange(today);
-  const [created, received, month, byStatus, week, awaiting] = await db.batch([
+  const [created, received, month, byStatus, week, awaiting, newReq] = await db.batch([
     db.prepare("SELECT count(*) AS n, coalesce(sum(total_satang),0) AS s FROM orders WHERE created_at>=? AND created_at<? AND status<>'cancelled'").bind(dayStart, dayEnd),
     db.prepare('SELECT count(*) AS n, coalesce(sum(amount_satang),0) AS s FROM income WHERE received_date=?').bind(today),
     db.prepare('SELECT count(*) AS n, coalesce(sum(amount_satang),0) AS s FROM income WHERE received_date>=? AND received_date<=?').bind(monthStart, today),
     db.prepare("SELECT status, count(*) AS n, coalesce(sum(total_satang),0) AS s FROM orders WHERE status IN ('pending','awaiting_verification','paid','processing') GROUP BY status"),
     db.prepare('SELECT received_date AS d, sum(amount_satang) AS s FROM income WHERE received_date>=? AND received_date<=? GROUP BY received_date').bind(weekStart, today),
     db.prepare(`SELECT o.order_no,o.title,o.total_satang,o.updated_at,c.name AS customer_name FROM orders o JOIN customers c ON c.id=o.customer_id
-      WHERE o.status='awaiting_verification' ORDER BY o.updated_at LIMIT 10`)
+      WHERE o.status='awaiting_verification' ORDER BY o.updated_at LIMIT 10`),
+    db.prepare("SELECT count(*) AS n FROM job_requests WHERE status='new'")
   ]);
   const status = Object.fromEntries(byStatus.results.map(r => [r.status, { count: r.n, totalSatang: r.s }]));
   const zero = { count: 0, totalSatang: 0 };
@@ -29,6 +30,7 @@ export async function dashboard(env) {
     awaitingVerification: status.awaiting_verification || zero,
     unpaid: status.pending || zero,
     inProgress: { count: (status.paid?.count || 0) + (status.processing?.count || 0) },
+    newRequests: { count: newReq.results[0].n },
     last7Days: Array.from({ length: 7 }, (_, i) => { const d = addDays(weekStart, i); return { date: d, totalSatang: weekMap[d] || 0 }; }),
     awaitingList: awaiting.results.map(r => ({ orderNo: r.order_no, title: r.title, totalSatang: r.total_satang, customerName: r.customer_name, since: r.updated_at }))
   };

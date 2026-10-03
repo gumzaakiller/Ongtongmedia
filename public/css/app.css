@@ -303,3 +303,58 @@ textarea { min-height: 76px; resize: vertical; }
 .social .btn:only-child { grid-column: 1 / -1; }
 .landing-actions { display: grid; gap: 8px; max-width: 320px; margin: 0 auto; }
 .landing-actions .btn { margin: 0; }
+
+/* ---------- home ---------- */
+.home { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; display: grid; gap: 16px; }
+.home > * { min-width: 0; }
+.home-hero { text-align: center; padding: 12px 0 0; }
+.home-hero img { width: 120px; height: 120px; }
+.home-hero h1 { font-size: 32px; margin: 8px 0 4px; }
+.home-hero p { margin: 0; }
+.home-menu { display: grid; gap: 12px; }
+.menu-card { display: block; padding: 20px 20px 18px; border: 2px solid var(--black); border-radius: var(--radius); text-decoration: none; color: var(--black); background: var(--white); }
+.menu-card > b { display: block; font-size: 24px; line-height: 1.25; }
+.menu-card > span { display: block; margin-top: 4px; color: var(--ink-2); }
+.menu-card.order { background: var(--black); color: var(--white); }
+.menu-card.order > b { color: var(--yellow); }
+.menu-card.order > span { color: #E8E3C8; }
+.menu-card:active { transform: translateY(1px); }
+.recent-title { font-size: 15px; margin: 14px 0 6px; color: var(--ink-2); }
+.recent { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.recent a { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 2px solid var(--line); border-radius: var(--radius-sm); text-decoration: none; }
+.recent a span { color: var(--ink-2); font-size: 14px; text-align: right; }
+.home-link { display: inline-flex; }
+
+/* ---------- order form ---------- */
+.order-form { display: grid; gap: 16px; }
+.cat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.cat { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 84px; padding: 12px; border: 2px solid var(--line); border-radius: var(--radius-sm); background: var(--white); text-align: left; cursor: pointer; }
+.cat b { font-size: 16px; line-height: 1.3; }
+.cat span { font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+.cat[aria-checked="true"] { border-color: var(--black); background: var(--yellow); box-shadow: inset 0 0 0 1px var(--black); }
+.cat[aria-checked="true"] span { color: var(--black); }
+.size-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 92px; gap: 8px; align-items: end; }
+.size-row label { margin-top: 0; }
+.size-row .times { padding-bottom: 12px; font-weight: 700; }
+.opts { margin-top: 16px; }
+.opts legend { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.check, .radio { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: 0; font-weight: 400; font-size: 16px; }
+.check input, .radio input { width: 22px; height: 22px; min-height: 0; accent-color: var(--black); }
+#optionList { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.file-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.file-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; background: var(--paper); border-radius: 8px; font-size: 14px; overflow-wrap: anywhere; }
+.file-list a { overflow-wrap: anywhere; }
+.done { text-align: center; }
+.done-no { font-size: 28px; font-weight: 800; margin: 4px 0; }
+.big-cta { min-height: 56px; font-size: 18px; }
+.status-box.quoted { background: var(--yellow); color: var(--black); border-color: var(--black); }
+
+/* admin: request detail */
+.req-files { display: grid; gap: 10px; margin-top: 6px; }
+.req-files img { display: block; max-width: 100%; max-height: 320px; border: 1px solid var(--line); border-radius: 8px; }
+.req-files a.pdf { display: block; padding: 10px 12px; border: 2px solid var(--black); border-radius: 8px; text-decoration: none; font-weight: 700; }
+.tab-count { display: inline-block; min-width: 22px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--yellow); color: var(--black); font-size: 13px; line-height: 20px; }
+.tab-count[hidden] { display: none; }
+.new-req { display: grid; gap: 2px; width: 100%; padding: 16px 18px; text-align: left; cursor: pointer; background: var(--yellow); }
+.new-req b { font-size: 19px; }
+@media (max-width: 959px) { #reqEmptySide { display: none; } }

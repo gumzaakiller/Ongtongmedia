@@ -38,7 +38,8 @@ const orderNoFor = (compact, n) => `ONT-${compact}-${String(n).padStart(4, '0')}
 export const ORDER_NO_RE = /^ONT-\d{8}-\d{4,7}$/;
 export const payUrl = (origin, token) => `${origin}/pay/${token}`;
 
-export async function createOrder(env, input, requestKey, origin) {
+// fromRequest: { id, version } of a job request being quoted; linked in the same transaction.
+export async function createOrder(env, input, requestKey, origin, fromRequest = null) {
   const db = env.DB;
   const existing = await db.prepare('SELECT order_no FROM orders WHERE request_key=?').bind(requestKey).first();
   if (existing) return { created: false, order: await getOrderDetail(env, existing.order_no, origin) };
@@ -55,6 +56,7 @@ export async function createOrder(env, input, requestKey, origin) {
   const token = randomToken();
 
   const stmts = [];
+  if (fromRequest) stmts.push(guard(db, "SELECT count(*) FROM job_requests WHERE id=? AND version=? AND status='new'", fromRequest.id, fromRequest.version));
   if (!input.customer.id) {
     stmts.push(db.prepare('INSERT INTO customers(name,phone,line_id,created_at,updated_at) VALUES(?,?,?,?,?)')
       .bind(input.customer.name, input.customer.phone, input.customer.lineId, now, now));
@@ -67,10 +69,19 @@ export async function createOrder(env, input, requestKey, origin) {
     stmts.push(db.prepare('INSERT INTO order_items(order_id,position,description,qty,unit_price_satang,amount_satang) SELECT id,?,?,?,?,? FROM orders WHERE order_no=?')
       .bind(item.position, item.description, item.qty, item.unitPrice, item.amount, orderNo));
   }
-  stmts.push(db.prepare("INSERT INTO order_events(order_id,from_status,to_status,note,created_at) SELECT id,NULL,'pending','สร้างรายการเรียกเก็บเงิน',? FROM orders WHERE order_no=?").bind(now, orderNo));
+  stmts.push(db.prepare("INSERT INTO order_events(order_id,from_status,to_status,note,created_at) SELECT id,NULL,'pending',?,? FROM orders WHERE order_no=?")
+    .bind(fromRequest ? `เสนอราคาจากคำขอ ${fromRequest.requestNo}` : 'สร้างรายการเรียกเก็บเงิน', now, orderNo));
+  if (fromRequest) {
+    stmts.push(db.prepare("UPDATE job_requests SET status='quoted', order_id=(SELECT id FROM orders WHERE order_no=?), version=version+1, updated_at=? WHERE id=?").bind(orderNo, now, fromRequest.id));
+  }
 
   try { await db.batch(stmts); }
   catch (e) {
+    if (fromRequest && isGuardFailure(e)) {
+      const raced = await db.prepare('SELECT order_no FROM orders WHERE request_key=?').bind(requestKey).first();
+      if (raced) return { created: false, order: await getOrderDetail(env, raced.order_no, origin) };
+      throw new AppError('คำขอนี้ถูกเสนอราคา ยกเลิก หรือแก้ไขไปแล้ว กรุณาโหลดข้อมูลใหม่', 409);
+    }
     // Same Idempotency-Key sent twice at once: the loser returns the winner's order.
     const raced = await db.prepare('SELECT order_no FROM orders WHERE request_key=?').bind(requestKey).first();
     if (raced) return { created: false, order: await getOrderDetail(env, raced.order_no, origin) };
