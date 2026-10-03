@@ -55,6 +55,25 @@
       <h2>ผู้ดูแลร้าน</h2>
       <form id="loginForm"><label for="adminPassword">รหัสผ่านผู้ดูแล</label><input id="adminPassword" type="password" autocomplete="current-password" required maxlength="256"><button class="btn primary spaced" type="submit">เข้าสู่ระบบ</button></form>
       <div id="adminControls" hidden><button id="reloadOrders" class="btn primary">โหลดรายการใหม่</button> <button id="logout" class="btn soft">ออกจากระบบ</button></div>
+      <section id="accountingPanel" hidden aria-label="ภาพรวมบัญชี">
+        <h2 class="section-title">ภาพรวมร้าน</h2>
+        <p class="muted">ยอดวันนี้และเดือนนี้นับตามเวลาไทย · รับเงินแล้วเป็นยอดสะสม · กำไรสุทธิ = รายรับ − รายจ่ายของเดือนนี้</p>
+        <p id="accountingMessage" role="status"></p>
+        <div id="dashboard" class="dashboard-grid"></div>
+        <h2 class="section-title">รอตรวจสอบการชำระ</h2>
+        <p class="muted">ตรวจยอดเงินจริงและสลิปก่อนกดยืนยัน ระบบจะบันทึกรายรับให้ครั้งเดียวต่อคำสั่งซื้อ</p>
+        <div id="pendingPayments" class="orders"></div><button id="morePayments" type="button" class="btn soft spaced" hidden>โหลดรายการรอตรวจสอบเพิ่ม</button>
+        <h2 class="section-title">รายรับ</h2><div id="incomeList" class="orders"></div><button id="moreIncome" type="button" class="btn soft spaced" hidden>โหลดรายรับเพิ่ม</button>
+        <h2 class="section-title">รายจ่าย</h2>
+        <form id="expenseForm">
+          <div class="row"><div><label for="expenseAmount">จำนวนเงิน (บาท)</label><input id="expenseAmount" type="number" min="0.01" max="1000000" step="0.01" required></div><div><label for="expenseDate">วันที่จ่าย</label><input id="expenseDate" type="date" required></div></div>
+          <label for="expenseCategory">หมวดรายจ่าย</label><input id="expenseCategory" maxlength="100" required>
+          <label for="expenseDescription">รายละเอียด</label><input id="expenseDescription" maxlength="1000" required>
+          <button type="submit" class="btn primary spaced">บันทึกรายจ่าย</button>
+        </form>
+        <div id="expenseList" class="orders"></div><button id="moreExpenses" type="button" class="btn soft spaced" hidden>โหลดรายจ่ายเพิ่ม</button>
+        <h2 class="section-title">คำสั่งซื้อ</h2>
+      </section>
       <p id="adminMessage" role="status"></p><div id="orders" class="orders"></div><button id="moreOrders" class="btn soft spaced" hidden>โหลดรายการเพิ่มเติม</button>
     </div>
   </section>

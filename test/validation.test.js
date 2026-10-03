@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateOrder, money, crc16, promptPayPayload } from '../src/shared.js';
 import worker, { imageType } from '../src/index.js';
+import { bangkokPeriods } from '../src/accounting.js';
+test('Bangkok periods handle midnight, month lengths and new year',()=>{
+  const feb=bangkokPeriods(new Date('2026-01-31T17:00:00Z'));
+  assert.equal(feb.date,'2026-02-01');assert.equal(feb.start,'2026-01-31T17:00:00.000Z');assert.equal(feb.end,'2026-02-28T17:00:00.000Z');
+  assert.equal(bangkokPeriods(new Date('2026-12-31T17:00:00Z')).month,'2027-01');
+});
 const sample = () => ({ customer:'ทดสอบ',phone:'0812345678',items:[{name:'งานพิมพ์',price:'100.25',qty:3}],shipping:'10.50' });
 test('server computes integer satang and ignores forged totals',()=>{
   const order=validateOrder({...sample(),subtotal:1,total:1});

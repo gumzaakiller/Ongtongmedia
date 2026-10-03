@@ -1,4 +1,5 @@
 import { AppError, MAX_SLIP, STATUSES, validateOrder, validPromptPay } from './shared.js';
+import { accountingRoute, createPayment, confirmPayment, paidOrderStatuses } from './accounting.js';
 
 const encoder = new TextEncoder();
 const SESSION_SECONDS = 8 * 60 * 60;
@@ -108,7 +109,7 @@ async function createOrder(request, env) {
   const hash = await digest(JSON.stringify(order) + (bytes ? await digest(bytes) : ''));
   const find = () => env.DB.prepare('SELECT * FROM orders WHERE request_key=?').bind(requestKey).first();
   const previous = await find();
-  if (previous) return replay(previous, hash);
+  if (previous) { const response = replay(previous, hash); await createPayment(env.DB,previous.id); return response; }
   const id = `OTM-${crypto.randomUUID()}`;
   const slipKey = bytes ? `slips/${id}` : null;
   const status = bytes ? STATUSES[1] : STATUSES[0];
@@ -120,9 +121,10 @@ async function createOrder(request, env) {
     // Resolve a concurrent duplicate or ambiguous DB response before deleting any slip.
     const saved = await find();
     if (slipKey && saved?.id !== id) await env.SLIPS.delete(slipKey);
-    if (saved) return replay(saved, hash);
+    if (saved) { const response = replay(saved, hash); await createPayment(env.DB,saved.id); return response; }
     throw error;
   }
+  await createPayment(env.DB,id);
   return json({ orderId: id, status, totalSatang: order.total }, 201);
 }
 async function listOrders(request, env) {
@@ -151,6 +153,8 @@ async function route(request, env) {
   if (path === '/api/admin/login' && request.method === 'POST') return login(request, env);
   if (path.startsWith('/api/admin/')) {
     await requireAdmin(request, env);
+    const accounting = await accountingRoute(request,env,readJson);
+    if (accounting) return accounting;
     if (path === '/api/admin/session' && request.method === 'GET') return json({ ok: true });
     if (path === '/api/admin/logout' && request.method === 'POST') {
       await env.DB.prepare('DELETE FROM sessions WHERE token_hash=?').bind(await digest(sessionToken(request))).run();
@@ -161,7 +165,17 @@ async function route(request, env) {
     if (match && match[2] === 'status' && request.method === 'PATCH') {
       const body = await readJson(request);
       if (!STATUSES.includes(body?.status) || !Number.isInteger(body?.version)) throw new AppError('สถานะไม่ถูกต้อง');
-      const result = await env.DB.prepare('UPDATE orders SET status=?,version=version+1 WHERE id=? AND version=? RETURNING status,version').bind(body.status, match[1], body.version).first();
+      if (body.status === 'ชำระแล้ว') {
+        // Preserve the old endpoint, but never bypass the accounting transaction.
+        const current=await env.DB.prepare('SELECT version FROM orders WHERE id=?').bind(match[1]).first();
+        if (!current || current.version!==body.version) throw new AppError('รายการถูกแก้ไขแล้ว กรุณาโหลดใหม่',409);
+        await confirmPayment(env.DB,(await createPayment(env.DB,match[1])).id);
+        return json(await env.DB.prepare('SELECT status,version FROM orders WHERE id=?').bind(match[1]).first());
+      }
+      const needsPaid=paidOrderStatuses.includes(body.status);
+      const result = await env.DB.prepare(`UPDATE orders SET status=?,version=version+1 WHERE id=? AND version=?
+        AND (? = EXISTS(SELECT 1 FROM payments WHERE order_id=orders.id AND status='paid')) RETURNING status,version`)
+        .bind(body.status, match[1], body.version,needsPaid?1:0).first();
       if (!result) throw new AppError('รายการถูกแก้ไขแล้ว กรุณาโหลดรายการใหม่', 409);
       return json(result);
     }
