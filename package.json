@@ -2,11 +2,19 @@
   "name": "oongtong-media",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "build": "node scripts/build.mjs",
+    "dev": "npm run build && wrangler dev --persist-to .state",
+    "deploy": "npm run build && wrangler deploy",
+    "test": "node --test",
+    "db:local": "wrangler d1 migrations apply DB --local --persist-to .state",
+    "db:remote": "wrangler d1 migrations apply DB --remote"
   },
+  "dependencies": { "qrcode": "1.5.4" },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "wrangler": "4.100.0",
+    "esbuild": "^0.25.0",
+    "miniflare": "4.20260611.0"
   }
 }

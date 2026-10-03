@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>อองตองมีเดีย | ชำระเงิน</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <div class="brand">
+      <img id="shopLogo" class="shop-logo" src="/shop-logo.png" width="72" height="72" alt="โลโก้อองตองมีเดีย">
+      <div class="brand-copy"><div class="logo" id="shopName">อองตองมีเดีย</div><div class="tag">ระบบรับชำระเงินและแจ้งชำระเงิน</div></div>
+    </div>
+    <nav class="tabs" aria-label="เมนูหลัก"><button class="tab active" id="payNav" aria-pressed="true">ชำระเงิน</button><button class="tab" id="adminNav" aria-pressed="false">ผู้ดูแล</button></nav>
+  </header>
+  <noscript>กรุณาเปิด JavaScript เพื่อใช้งานระบบ</noscript>
+  <p id="configMessage" class="notice" role="status">กำลังโหลดข้อมูลร้าน...</p>
+  <section id="payTab" aria-label="แจ้งชำระเงิน">
+    <form id="orderForm">
+      <fieldset id="orderFields">
+        <div class="grid">
+          <div class="card">
+            <h2>1) ข้อมูลลูกค้า</h2>
+            <div class="row">
+              <div><label for="customer">ชื่อ-นามสกุล / ชื่อลูกค้า</label><input id="customer" autocomplete="name" maxlength="200" placeholder="เช่น คุณสมชาย" required></div>
+              <div><label for="phone">เบอร์โทร</label><input id="phone" type="tel" autocomplete="tel" maxlength="30" placeholder="08x-xxx-xxxx" required></div>
+            </div>
+            <label for="contact">LINE / Facebook / ช่องทางติดต่อ</label><input id="contact" maxlength="300" placeholder="ใส่เพื่อให้ร้านติดต่อกลับได้สะดวก">
+            <h2 class="section-title">2) สินค้า / บริการ</h2>
+            <p class="muted">กรอกรายการและราคาตามที่ตกลงกับร้าน</p>
+            <div id="items"></div><button type="button" class="btn soft" id="addItem">+ เพิ่มรายการ</button>
+            <div class="row"><div><label for="shipping">ค่าจัดส่ง</label><input id="shipping" type="number" min="0" max="1000000" step="0.01" value="0" required></div><div><label for="note">หมายเหตุ</label><input id="note" maxlength="1000" placeholder="เช่น ส่งไฟล์ทาง LINE"></div></div>
+            <div class="totals"><div class="trow"><span>ยอดสินค้า/บริการ</span><b id="subtotalText">฿0.00</b></div><div class="trow"><span>ค่าจัดส่ง</span><b id="shippingText">฿0.00</b></div><div class="trow grand"><span>ยอดชำระ</span><span id="totalText">฿0.00</span></div></div>
+          </div>
+          <div class="card">
+            <h2>3) ชำระเงิน</h2>
+            <div class="qrbox"><canvas id="qr" hidden aria-label="QR พร้อมเพย์สำหรับยอดชำระ"></canvas><div id="qrMessage" class="muted">กรอกยอดเพื่อสร้าง QR</div><div class="grand" id="qrAmount">฿0.00</div></div>
+            <div class="payinfo"><b>ข้อมูลบัญชีรับเงิน</b><p id="bankInfo">กำลังโหลดข้อมูล...</p></div>
+            <label for="slip">แนบสลิปการชำระเงิน (ถ้ามี)</label><input id="slip" type="file" accept="image/png,image/jpeg,image/webp"><p class="muted">PNG, JPG หรือ WEBP ขนาดไม่เกิน 8 MB</p>
+            <p class="muted">ร้านจะตรวจสอบยอดเงินจริงก่อนยืนยันสถานะชำระแล้ว หากยังไม่แนบสลิป คำสั่งซื้อจะอยู่ในสถานะรอชำระเงิน</p>
+            <button type="submit" id="submitOrder" class="btn primary full" disabled>ยืนยันคำสั่งซื้อ / แจ้งชำระเงิน</button>
+          </div>
+        </div>
+      </fieldset>
+    </form>
+    <p id="orderError" class="notice error" role="alert" hidden></p>
+    <div id="successBox" class="notice success" role="status" hidden></div>
+    <button id="newOrder" class="btn soft" hidden>เริ่มคำสั่งซื้อใหม่</button>
+  </section>
+  <section id="adminTab" hidden aria-label="ผู้ดูแลร้าน">
+    <div class="card">
+      <h2>ผู้ดูแลร้าน</h2>
+      <form id="loginForm"><label for="adminPassword">รหัสผ่านผู้ดูแล</label><input id="adminPassword" type="password" autocomplete="current-password" required maxlength="256"><button class="btn primary spaced" type="submit">เข้าสู่ระบบ</button></form>
+      <div id="adminControls" hidden><button id="reloadOrders" class="btn primary">โหลดรายการใหม่</button> <button id="logout" class="btn soft">ออกจากระบบ</button></div>
+      <p id="adminMessage" role="status"></p><div id="orders" class="orders"></div><button id="moreOrders" class="btn soft spaced" hidden>โหลดรายการเพิ่มเติม</button>
+    </div>
+  </section>
+  <footer class="card shop-contact" aria-labelledby="contactHeading">
+    <h2 id="contactHeading">ติดต่ออองตองมีเดีย</h2>
+    <p>สอบถามรายละเอียดงานหรือแจ้งปัญหาการชำระเงิน ติดต่ออองตองมีเดีย ยินดีดูแลทุกขั้นตอน</p>
+    <div class="contact-links">
+      <a href="tel:0804938357">โทร 080-493-8357</a>
+      <a href="tel:0882965924">โทร 088-296-5924</a>
+    </div>
+    <p class="muted">ขอบคุณที่ไว้วางใจอองตองมีเดีย หากโอนเงินแล้ว กรุณาแนบสลิปเพื่อให้ร้านตรวจสอบการชำระเงิน</p>
+  </footer>
+</main>
+</body>
+</html>
