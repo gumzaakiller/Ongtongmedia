@@ -28,7 +28,7 @@ async function showApp() {
 }
 
 /* ---------------- views ---------------- */
-const VIEWS = { dash: 'dashView', requests: 'requestsView', orders: 'ordersView', income: 'incomeView', gallery: 'galleryView' };
+const VIEWS = { dash: 'dashView', requests: 'requestsView', orders: 'ordersView', income: 'incomeView', gallery: 'galleryView', acct: 'acctView' };
 async function setView(name) {
   state.view = name;
   for (const [v, id] of Object.entries(VIEWS)) $(id).hidden = v !== name;
@@ -40,6 +40,7 @@ async function setView(name) {
   if (name === 'income') return loadIncome();
   if (name === 'requests') return loadRequests();
   if (name === 'gallery') return loadGallery();
+  if (name === 'acct') return loadAcct();
   await loadOrders();
   if (isDesktop() && !state.current) openCreate();
 }
@@ -596,4 +597,157 @@ $('galleryForm').addEventListener('submit', async e => {
     loadGallery();
   } catch (err) { show($('gError'), err.message); }
   finally { gSending = false; $('gSubmit').disabled = false; $('gSubmit').textContent = 'เพิ่มรูปตัวอย่าง'; }
+});
+
+/* ---------------- accounts: income / expenses / profit ---------------- */
+const TH_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const TH_MONTHS_FULL = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+const be = y => Number(y) + 543; // Thai (Buddhist-era) year
+const acct = { view: 'day', period: '', data: null, cats: null };
+const shortBaht = sat => { const b = sat / 100; return Math.abs(b) >= 1e6 ? (b / 1e6).toFixed(1) + 'M' : Math.abs(b) >= 1e3 ? (b / 1e3).toFixed(b % 1000 ? 1 : 0) + 'k' : String(Math.round(b)); };
+
+function periodLabel(view, p) {
+  if (view === 'day') return `${TH_MONTHS_FULL[+p.slice(5, 7) - 1]} ${be(p.slice(0, 4))}`;
+  if (view === 'month') return `ปี ${be(p)}`;
+  return `ปี ${be(+p - 4)}–${be(p)}`;
+}
+function bucketLabel(view, key, long = false) {
+  if (view === 'day') return long ? `${+key.slice(8)} ${TH_MONTHS[+key.slice(5, 7) - 1]} ${be(key.slice(0, 4))}` : String(+key.slice(8));
+  if (view === 'month') return long ? `${TH_MONTHS_FULL[+key.slice(5) - 1]} ${be(key.slice(0, 4))}` : TH_MONTHS[+key.slice(5) - 1];
+  return String(be(key));
+}
+function shiftPeriod(dir) {
+  const p = acct.period;
+  if (acct.view === 'day') {
+    const d = new Date(Date.UTC(+p.slice(0, 4), +p.slice(5, 7) - 1 + dir, 1));
+    acct.period = d.toISOString().slice(0, 7);
+  } else acct.period = String(+p + dir * (acct.view === 'year' ? 5 : 1));
+  loadAcct();
+}
+
+async function loadAcct() {
+  if (!acct.period) acct.period = acct.view === 'day' ? todayYmd().slice(0, 7) : todayYmd().slice(0, 4);
+  try {
+    const d = await api(`/api/admin/summary?view=${acct.view}&period=${acct.period}`);
+    acct.data = d;
+    if (!acct.cats) {
+      acct.cats = d.categories;
+      $('eCat').replaceChildren(...d.categories.map(c => el('option', { value: c, text: c })));
+      $('eDate').value = todayYmd(); $('eDate').max = todayYmd();
+    }
+    renderAcct(d);
+  } catch (err) { toast(err.message); }
+}
+
+function renderAcct(d) {
+  const thisPeriod = d.view === 'day' ? d.today.slice(0, 7) : d.today.slice(0, 4);
+  $('acctPeriod').textContent = periodLabel(d.view, d.period);
+  $('acctNext').disabled = d.period >= thisPeriod;
+  const t = d.totals;
+  $('kIncome').textContent = baht(t.incomeSatang); $('kIncomeN').textContent = `${t.incomeCount} รายการ`;
+  $('kExpense').textContent = baht(t.expenseSatang); $('kExpenseN').textContent = `${t.expenseCount} รายการ`;
+  const loss = t.profitSatang < 0;
+  $('kProfitLabel').textContent = loss ? 'ขาดทุน' : 'กำไร';
+  $('kProfit').textContent = (loss ? '−' : '') + baht(Math.abs(t.profitSatang));
+  $('kProfit').parentElement.classList.toggle('loss', loss);
+  $('kMargin').textContent = t.incomeSatang ? `${Math.round(t.profitSatang / t.incomeSatang * 100)}% ของรายรับ` : '';
+
+  renderAcctChart(d);
+
+  $('acctColLabel').textContent = { day: 'วันที่', month: 'เดือน', year: 'ปี' }[d.view];
+  // Day view lists only days with money moving; month/year list every row.
+  const rows = d.view === 'day' ? d.buckets.filter(b => b.incomeSatang || b.expenseSatang).reverse() : d.buckets.slice().reverse();
+  const money = (sat, cls = '') => el('td', { class: cls, text: sat ? baht(sat) : '–' });
+  const profitCell = sat => el('td', { class: sat < 0 ? 'neg' : '', text: sat ? (sat < 0 ? '−' : '') + baht(Math.abs(sat)) : '–' });
+  $('acctRows').replaceChildren(...rows.map(b => el('tr', {}, el('th', { scope: 'row', text: bucketLabel(d.view, b.key, true) }), money(b.incomeSatang), money(b.expenseSatang), profitCell(b.profitSatang))));
+  $('acctFoot').replaceChildren(el('tr', {}, el('th', { text: 'รวม' }), money(t.incomeSatang), money(t.expenseSatang), profitCell(t.profitSatang)));
+  $('acctEmptyHint').textContent = rows.length ? '' : 'ยังไม่มีรายรับหรือรายจ่ายในช่วงนี้';
+
+  $('expCats').replaceChildren(...(d.expenseByCategory.length ? d.expenseByCategory.map(c => el('li', {},
+    el('span', { text: `${c.category} (${c.count})` }), el('b', { class: 'num', text: baht(c.totalSatang) }))) : [el('li', { class: 'muted', text: 'ยังไม่มีรายจ่าย' })]));
+  $('expList').replaceChildren(...d.expenses.map(x => el('li', {},
+    el('div', {}, el('b', { text: x.description }), el('small', { class: 'muted', text: `${thaiDate(x.date)} · ${x.category}${x.vendor ? ' · ' + x.vendor : ''}` })),
+    el('b', { class: 'num', text: baht(x.amountSatang) }),
+    el('button', { class: 'btn danger small-btn', type: 'button', text: 'ลบ', 'aria-label': `ลบรายจ่าย ${x.description}`, onclick: async e => {
+      if (!confirm(`ลบรายจ่าย "${x.description}" ${baht(x.amountSatang)}?`)) return;
+      e.currentTarget.disabled = true;
+      try { await api(`/api/admin/expenses/${x.id}`, { method: 'DELETE' }); toast('ลบรายจ่ายแล้ว'); loadAcct(); }
+      catch (err) { toast(err.message); e.currentTarget.disabled = false; }
+    } }))));
+}
+
+// Grouped bars: income vs expense per day / month / year. One y-axis (baht), recessive grid, hover tooltip.
+function renderAcctChart(d) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svgEl = (tag, attrs = {}) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); return n; };
+  const box = $('acctChart'); const W = Math.max(320, box.clientWidth || 640), H = 220;
+  const m = { t: 10, r: 8, b: 26, l: 44 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const max = Math.max(1, ...d.buckets.flatMap(b => [b.incomeSatang, b.expenseSatang]));
+  // nice ticks
+  const raw = max / 4, mag = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 2.5, 5, 10].map(x => x * mag).find(x => x >= raw);
+  const top = step * 4, y = v => m.t + ih - (v / top) * ih;
+  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': `กราฟรายรับและรายจ่าย ${periodLabel(d.view, d.period)}` });
+  for (let i = 0; i <= 4; i++) {
+    const v = step * i, yy = y(v);
+    svg.append(svgEl('line', { x1: m.l, x2: W - m.r, y1: yy, y2: yy, class: i ? 'grid' : 'axis' }));
+    const tx = svgEl('text', { x: m.l - 6, y: yy + 4, 'text-anchor': 'end', class: 'tick' }); tx.textContent = shortBaht(v); svg.append(tx);
+  }
+  const n = d.buckets.length, band = iw / n, gap = 2;
+  const bw = Math.max(2, Math.min(18, (band - 6) / 2 - gap / 2));
+  const bar = (x, v, cls) => {
+    if (!v) return null;
+    const h = Math.max(1, (v / top) * ih), r = Math.min(4, bw / 2, h), y0 = m.t + ih, y1 = y0 - h;
+    return svgEl('path', { class: cls, d: `M${x},${y0}V${y1 + r}Q${x},${y1} ${x + r},${y1}H${x + bw - r}Q${x + bw},${y1} ${x + bw},${y1 + r}V${y0}Z` });
+  };
+  const every = n > 20 ? 5 : 1;
+  d.buckets.forEach((b, i) => {
+    const cx = m.l + band * i + band / 2;
+    const a = bar(cx - bw - gap / 2, b.incomeSatang, 'inc'), e = bar(cx + gap / 2, b.expenseSatang, 'exp');
+    if (a) svg.append(a); if (e) svg.append(e);
+    if (i % every === 0 || i === n - 1) { const tx = svgEl('text', { x: cx, y: H - 8, 'text-anchor': 'middle', class: 'tick' }); tx.textContent = bucketLabel(d.view, b.key); svg.append(tx); }
+    const hit = svgEl('rect', { x: m.l + band * i, y: m.t, width: band, height: ih, class: 'hit' });
+    const show = () => {
+      const tip = $('acctTip');
+      tip.replaceChildren(el('b', { text: bucketLabel(d.view, b.key, true) }),
+        el('div', {}, el('span', { class: 'key inc' }), `รายรับ ${baht(b.incomeSatang)}`),
+        el('div', {}, el('span', { class: 'key exp' }), `รายจ่าย ${baht(b.expenseSatang)}`),
+        el('div', { class: b.profitSatang < 0 ? 'neg' : '' , text: `${b.profitSatang < 0 ? 'ขาดทุน' : 'กำไร'} ${baht(Math.abs(b.profitSatang))}` }));
+      tip.hidden = false;
+      const px = (cx / W) * box.clientWidth;
+      const left = Math.min(Math.max(0, cx < W / 2 ? px + 14 : px - 184), box.clientWidth - 170);
+      tip.style.left = `${left + box.offsetLeft}px`; tip.style.top = `${box.offsetTop + 4}px`;
+      hit.classList.add('on');
+    };
+    hit.addEventListener('pointerenter', show); hit.addEventListener('click', show);
+    hit.addEventListener('pointerleave', () => { $('acctTip').hidden = true; hit.classList.remove('on'); });
+    svg.append(hit);
+  });
+  box.replaceChildren(svg);
+}
+
+for (const c of $('acctViewChips').children) c.addEventListener('click', () => {
+  acct.view = c.dataset.v; acct.period = '';
+  for (const x of $('acctViewChips').children) x.setAttribute('aria-pressed', String(x === c));
+  loadAcct();
+});
+$('acctPrev').addEventListener('click', () => shiftPeriod(-1));
+$('acctNext').addEventListener('click', () => shiftPeriod(1));
+let acctResize; addEventListener('resize', () => { clearTimeout(acctResize); acctResize = setTimeout(() => { if (state.view === 'acct' && acct.data) renderAcctChart(acct.data); }, 200); });
+
+let eSending = false;
+$('expForm').addEventListener('submit', async e => {
+  e.preventDefault(); if (eSending) return;
+  const amount = toSatang($('eAmount').value);
+  if (!$('eDate').value) return show($('eError'), 'กรุณาเลือกวันที่');
+  if (!Number.isFinite(amount) || amount <= 0) return show($('eError'), 'กรุณากรอกจำนวนเงิน เช่น 350 หรือ 350.50');
+  if (!$('eDesc').value.trim()) return show($('eError'), 'กรุณากรอกรายการ');
+  eSending = true; $('eSubmit').disabled = true; show($('eError'), '');
+  try {
+    await api('/api/admin/expenses', { method: 'POST', body: { date: $('eDate').value, category: $('eCat').value, description: $('eDesc').value, vendor: $('eVendor').value, amount: (amount / 100).toFixed(2) } });
+    toast('บันทึกรายจ่ายแล้ว');
+    $('eAmount').value = ''; $('eDesc').value = ''; $('eVendor').value = '';
+    loadAcct();
+  } catch (err) { show($('eError'), err.message); }
+  finally { eSending = false; $('eSubmit').disabled = false; }
 });

@@ -1,6 +1,7 @@
 import { AppError, json, readBody, readJson } from '../lib/http.js';
 import { MAX_SLIP_BYTES } from '../lib/image.js';
 import { addGalleryItem, deleteGalleryItem } from '../services/gallery.js';
+import { addExpense, deleteExpense, profitSummary, validateExpense } from '../services/accounts.js';
 import { login, logout, requireAdmin } from '../lib/auth.js';
 import { validateNewOrder, validateOrderEdit, text } from '../lib/validate.js';
 import { ORDER_NO_RE, changeStatus, createOrder, editOrder, getOrderDetail, listOrders, mapDbError, searchCustomers } from '../services/orders.js';
@@ -101,6 +102,14 @@ export async function handleAdmin(request, env, path) {
       return json({ order: await rejectPayment(env, id, { version: body.version, reason }, origin) });
     }
   }
+
+  if (path === '/api/admin/summary' && method === 'GET') {
+    const sp = new URL(request.url).searchParams;
+    return json(await profitSummary(env, sp.get('view') || 'day', sp.get('period') || ''));
+  }
+  if (path === '/api/admin/expenses' && method === 'POST') return json({ expense: await addExpense(env, validateExpense(await readJson(request))) }, 201);
+  const em = path.match(/^\/api\/admin\/expenses\/(\d{1,9})$/);
+  if (em && method === 'DELETE') return json(await deleteExpense(env, Number(em[1])));
 
   if (path === '/api/admin/gallery' && method === 'POST') {
     const type = request.headers.get('content-type') || '';

@@ -410,3 +410,47 @@ textarea { min-height: 76px; resize: vertical; }
 .ag-item { border: 2px solid var(--black); border-radius: var(--radius-sm); overflow: hidden; background: var(--white); font-size: 13px; }
 .ag-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
 .ag-item div { padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+
+/* ---------- accounts (income / expenses / profit) ---------- */
+.acct-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 12px; }
+.acct-controls .chips { padding: 0; }
+.period-nav { display: flex; align-items: center; gap: 10px; }
+.period-nav b { min-width: 130px; text-align: center; }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.kpi { background: var(--white); border: 2px solid var(--black); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-direction: column; min-width: 0; }
+.kpi span { font-size: 13px; color: var(--ink-2); font-weight: 700; }
+.kpi b { font-size: clamp(16px, 4.6vw, 26px); line-height: 1.25; overflow-wrap: anywhere; }
+.kpi small { font-size: 12px; color: var(--ink-2); }
+.kpi.profit { background: var(--black); color: var(--white); }
+.kpi.profit span, .kpi.profit small { color: #E8E3C8; }
+.kpi.profit b { color: var(--yellow); }
+.kpi.profit.loss b { color: #FF8A80; }
+.chart-panel { position: relative; padding: 12px 12px 8px; margin-bottom: 12px; }
+.legend { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-left: 8px; }
+.key.inc { background: #2a78d6; } .key.exp { background: #eb6834; }
+.legend .key:first-child { margin-left: 0; }
+.chart-box { width: 100%; overflow: hidden; }
+.chart-box svg { display: block; width: 100%; height: auto; }
+.chart-box .grid { stroke: rgba(0,0,0,.08); stroke-width: 1; }
+.chart-box .axis { stroke: rgba(0,0,0,.35); stroke-width: 1; }
+.chart-box .tick { font-size: 11px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+.chart-box .inc { fill: #2a78d6; } .chart-box .exp { fill: #eb6834; }
+.chart-box .hit { fill: transparent; cursor: pointer; }
+.chart-box .hit.on { fill: rgba(0,0,0,.05); }
+.chart-tip { position: absolute; z-index: 5; width: 170px; padding: 8px 10px; background: var(--white); border: 2px solid var(--black); border-radius: var(--radius-sm); font-size: 13px; pointer-events: none; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.chart-tip b { display: block; margin-bottom: 2px; }
+.chart-tip .key { margin: 0 6px 0 0; width: 10px; height: 10px; }
+.neg { color: var(--red); }
+.acct-cols { display: grid; gap: 12px; }
+@media (min-width: 900px) { .acct-cols { grid-template-columns: 1.2fr 1fr; align-items: start; } }
+.acct-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+.acct-table th, .acct-table td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.acct-table th:first-child { text-align: left; font-weight: 600; }
+.acct-table thead th { font-size: 12px; color: var(--ink-2); }
+.acct-table tfoot th, .acct-table tfoot td { font-weight: 800; border-top: 2px solid var(--black); border-bottom: 0; }
+.cat-list, .exp-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.cat-list li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+.exp-list li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.exp-list li div { display: flex; flex-direction: column; min-width: 0; }
+.exp-list small { font-size: 12px; }

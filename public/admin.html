@@ -38,6 +38,7 @@
   </header>
   <nav class="tabs-nav" aria-label="เมนูผู้ดูแล">
     <button class="tab-btn" type="button" data-view="dash" aria-pressed="false">ภาพรวม</button>
+    <button class="tab-btn" type="button" data-view="acct" aria-pressed="false">บัญชี</button>
     <button class="tab-btn" type="button" data-view="requests" aria-pressed="false">คำขอ <span class="tab-count" id="reqCount" hidden></span></button>
     <button class="tab-btn" type="button" data-view="orders" aria-pressed="true">บิล</button>
     <button class="tab-btn" type="button" data-view="income" aria-pressed="false">รายรับ</button>
@@ -110,6 +111,56 @@
       </article>
       <p id="reqEmptySide" class="notice">เลือกคำขอทางซ้ายเพื่อดูรายละเอียด</p>
     </aside>
+  </section>
+
+  <!-- Accounts: income / expenses / profit -->
+  <section id="acctView" class="view-wrap wide" hidden aria-labelledby="acctTitle">
+    <div class="list-head"><h1 id="acctTitle">สรุปบัญชี</h1></div>
+    <div class="acct-controls">
+      <div class="chips seg" id="acctViewChips" role="group" aria-label="สรุปเป็น">
+        <button class="chip" type="button" data-v="day" aria-pressed="true">รายวัน</button>
+        <button class="chip" type="button" data-v="month" aria-pressed="false">รายเดือน</button>
+        <button class="chip" type="button" data-v="year" aria-pressed="false">รายปี</button>
+      </div>
+      <div class="period-nav">
+        <button class="btn small-btn" type="button" id="acctPrev" aria-label="ช่วงก่อนหน้า">◀</button>
+        <b id="acctPeriod" class="num"></b>
+        <button class="btn small-btn" type="button" id="acctNext" aria-label="ช่วงถัดไป">▶</button>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><span>รายรับ</span><b class="num" id="kIncome"></b><small id="kIncomeN"></small></div>
+      <div class="kpi"><span>รายจ่าย</span><b class="num" id="kExpense"></b><small id="kExpenseN"></small></div>
+      <div class="kpi profit"><span id="kProfitLabel">กำไร</span><b class="num" id="kProfit"></b><small id="kMargin"></small></div>
+    </div>
+    <div class="panel chart-panel">
+      <div class="legend"><span class="key inc"></span>รายรับ <span class="key exp"></span>รายจ่าย</div>
+      <div class="chart-box" id="acctChart"></div>
+      <div class="chart-tip" id="acctTip" hidden></div>
+    </div>
+    <div class="acct-cols">
+      <div class="panel">
+        <h2>รายละเอียด</h2>
+        <div class="table-wrap"><table class="acct-table num"><thead><tr><th id="acctColLabel">วันที่</th><th>รายรับ</th><th>รายจ่าย</th><th>กำไร</th></tr></thead><tbody id="acctRows"></tbody><tfoot id="acctFoot"></tfoot></table></div>
+        <p class="hint" id="acctEmptyHint"></p>
+      </div>
+      <div class="panel">
+        <h2>บันทึกรายจ่าย</h2>
+        <form id="expForm" novalidate>
+          <div class="row2"><div><label for="eDate">วันที่จ่าย</label><input id="eDate" type="date"></div>
+            <div><label for="eAmount">จำนวนเงิน (บาท)</label><input id="eAmount" inputmode="decimal" placeholder="เช่น 350"></div></div>
+          <label for="eCat">หมวด</label><select id="eCat"></select>
+          <label for="eDesc">รายการ</label><input id="eDesc" maxlength="300" placeholder="เช่น ไวนิล 1 ม้วน">
+          <label for="eVendor">จ่ายให้ (ไม่บังคับ)</label><input id="eVendor" maxlength="200" placeholder="เช่น ร้านวัสดุ">
+          <p id="eError" class="notice error" role="alert" hidden></p>
+          <button id="eSubmit" class="btn primary block mt-16" type="submit">บันทึกรายจ่าย</button>
+        </form>
+        <h3>รายจ่ายตามหมวด</h3>
+        <ul class="cat-list" id="expCats"></ul>
+        <h3>รายการรายจ่ายในช่วงนี้</h3>
+        <ul class="exp-list" id="expList"></ul>
+      </div>
+    </div>
   </section>
 
   <!-- Gallery -->
