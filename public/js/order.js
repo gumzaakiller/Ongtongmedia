@@ -3,7 +3,7 @@ import { rememberRecent } from './recent.js';
 
 let catalog = [], limits = {}, selected = null, files = [], sendKey = null, sending = false, lineOaId = '@653ercqc';
 const todayYmd = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
-const mb = n => (n / 1024 / 1024).toFixed(1) + ' MB';
+const mb = n => n < 1024 * 1024 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (n / 1024 / 1024).toFixed(1) + ' MB';
 const ACCEPT = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
 
 function pick(cat) {
