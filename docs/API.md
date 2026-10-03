@@ -11,6 +11,7 @@
 | GET | `/api/pay/:token` | ข้อมูลออเดอร์สำหรับลูกค้า + `promptPayPayload` (สร้างจากยอดใน D1) · rate limit 120 ครั้ง/10 นาที/IP · token ผิดได้ 404 เหมือนกันทุกกรณี |
 | GET | `/api/pay/:token/qr.png` | รูป QR พร้อมเพย์ (PNG) ตามยอดใน D1 · เฉพาะสถานะ `pending` |
 | POST | `/api/pay/:token/slip` | ลูกค้าส่งสลิป: multipart `slip` (PNG/JPG/WEBP ≤ 8 MB ตรวจจากเนื้อไฟล์) + `note` · header `Idempotency-Key` · 10 ครั้ง/10 นาที/IP |
+| POST | `/api/pay/:token/notify` | ลูกค้าแจ้งโอนแล้วโดยไม่มีสลิป: JSON `{ note }` · header `Idempotency-Key` · ร้านต้องเช็คเงินเข้าแล้วยืนยันเอง |
 | GET | `/pay/:token` | หน้าเว็บลูกค้า (`public/pay.html`) |
 | GET | `/api/catalog` | ประเภทงานในเมนูสั่งงาน (แก้ที่ `src/catalog.js`) |
 | POST | `/api/requests` | ลูกค้าส่งคำขอสั่งงาน: multipart `category, qty, width, height, unit, options[], artwork, deadline, details, name, phone, lineId, files[]` · ไฟล์ JPG/PNG/WEBP/PDF ≤ 5 ไฟล์ ไฟล์ละ ≤ 20 MB รวม ≤ 25 MB · `Idempotency-Key` · 5 ครั้ง/10 นาที/IP → `{ requestNo, trackUrl }` |
