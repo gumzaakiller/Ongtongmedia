@@ -2,9 +2,24 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "oongtong-media",
   "main": "src/index.js",
-  "compatibility_date": "2026-10-02",
+  "compatibility_date": "2026-06-11",
   "assets": {
     "directory": "./public",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "ongtongmedia-db",
+    "database_id": "cbd0c379-e34c-43eb-abfb-5175fdf1d431",
+    "migrations_dir": "migrations"
+  }],
+  "r2_buckets": [{ "binding": "SLIPS", "bucket_name": "ongtongmedia-slips" }],
+  "vars": {
+    "SHOP_NAME": "อองตองมีเดีย",
+    "PROMPTPAY_ID": "0882965924",
+    "BANK_NAME": "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (ธ.ก.ส.)",
+    "ACCOUNT_NAME": "อองตองมีเดีย โดย นางสาววิภาวรรณ ปราบสงบ",
+    "ACCOUNT_NO": "020253932875"
   }
 }

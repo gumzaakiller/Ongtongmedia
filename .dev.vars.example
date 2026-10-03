@@ -1,0 +1,6 @@
+# Copy to .dev.vars for LOCAL development only. Use a unique password of at least 16 characters.
+ADMIN_PASSWORD=""
+PROMPTPAY_ID=""
+BANK_NAME=""
+ACCOUNT_NAME=""
+ACCOUNT_NO=""
