@@ -181,4 +181,4 @@ export async function getRequestFile(env, fileId) {
   } });
 }
 
-export const publicCatalog = () => CATALOG.map(({ id, name, hint, size, options }) => ({ id, name, hint, size, options }));
+export const publicCatalog = () => CATALOG.map(({ id, name, hint, size, options, fileNote = '' }) => ({ id, name, hint, size, options, fileNote }));

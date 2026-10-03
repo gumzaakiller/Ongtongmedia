@@ -37,7 +37,7 @@ test('customer sends a job request (สั่งงาน)', async t => {
   await t.test('catalog lists sign-shop jobs, no shirts', async () => {
     const r = await s.call('/api/catalog');
     const names = r.data.catalog.map(c => c.name).join(' ');
-    assert.match(names, /ป้ายไวนิล/); assert.doesNotMatch(names, /เสื้อ/);
+    assert.match(names, /ป้ายไวนิล/); assert.match(names, /3D/); assert.doesNotMatch(names, /เสื้อ/);
   });
   await t.test('request with options and two files is saved; files kept private in R2', async () => {
     const r = await s.submit({ options: ['เจาะตาไก่', 'ไม่มีจริง'], deadline: '2099-12-31' }, { files: [['โลโก้ร้าน.png', png(1), 'image/png'], ['แบบ.pdf', pdf, 'application/pdf']] });
@@ -78,6 +78,7 @@ test('customer sends a job request (สั่งงาน)', async t => {
     assert.equal(await bad({}, { files: [['big.png', big, 'image/png']] }), 413);
     assert.equal(await bad({}, { files: Array.from({ length: 6 }, (_, i) => [`a${i}.png`, png(i), 'image/png']) }), 400);
     assert.equal(await bad({ category: 'design', width: '', height: '', lineId: 'shop_line', phone: '' }), 201);
+    assert.equal(await bad({ category: 'print3d', width: '8', height: '12', options: ['เส้น PLA'] }), 201);
   });
   await t.test('requests are rate limited per IP', async () => {
     let last; for (let i = 0; i < 6; i++) last = await s.submit({}, { ip: '7.7.7.7' });

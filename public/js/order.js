@@ -13,6 +13,7 @@ function pick(cat) {
   $('optionList').replaceChildren(...cat.options.map((o, i) => el('label', { class: 'check' },
     el('input', { type: 'checkbox', name: 'options', value: o, id: `opt${i}` }), ` ${o}`)));
   $('optionsWrap').hidden = !cat.options.length;
+  $('fileNote').textContent = cat.fileNote || ''; $('fileNote').hidden = !cat.fileNote;
   $('details').placeholder = cat.id === 'other' ? 'บอกรายละเอียดงานที่ต้องการ (จำเป็น)' : 'เช่น ข้อความบนป้าย สีที่ต้องการ ใช้ติดที่ไหน';
   const first = $('specCard').hidden;
   $('specCard').hidden = false; $('contactCard').hidden = false;
